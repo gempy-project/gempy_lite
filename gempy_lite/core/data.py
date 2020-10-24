@@ -19,7 +19,6 @@ from gempy_lite.core.grid_modules import grid_types
 from gempy_lite.core.grid_modules import topography
 from gempy_lite.utils.meta import _setdoc, _setdoc_pro
 import gempy_lite.utils.docstring as ds
-from IPython.display import display
 
 pn.options.mode.chained_assignment = None
 
@@ -360,13 +359,18 @@ class Colors:
         if colordict:
             self.update_colors(colordict)
         else:
+
             items = [
                 widgets.ColorPicker(description=surface, value=color)
                 for surface, color in self.colordict.items()
             ]
             colbox = widgets.VBox(items)
             print('Click to select new colors.')
-            display(colbox)
+            try:
+                from IPython.display import display
+                display(colbox)
+            except ImportError:
+                raise ImportError('You need to install IPython for interactive color picking.')
 
             def on_change(v):
                 self.colordict[v['owner'].description] = v['new']  # update colordict
@@ -1084,8 +1088,9 @@ class Options(object):
         Returns:
             bool: True
         """
-        import theano
-        self.df.loc['values', 'device'] = theano.config.device
+
+        # We want to have an infer function here
+        self.df.loc['values', 'device'] = 'cpu'
 
         if self.df.loc['values', 'device'] == 'cpu':
             self.df.loc['values', 'dtype'] = 'float64'
