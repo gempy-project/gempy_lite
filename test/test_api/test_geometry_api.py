@@ -1,4 +1,4 @@
-import gempy as gp
+import gempy_lite as gp
 import os
 input_path = os.path.dirname(__file__) + '/../../examples/data'
 

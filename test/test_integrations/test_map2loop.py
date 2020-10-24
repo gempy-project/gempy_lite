@@ -1,4 +1,4 @@
-import gempy as gp
+import gempy_lite as gp
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 
 # Input files
-from gempy.addons.map2gempy import loop2gempy
+from gempy_lite.addons.map2gempy import loop2gempy
 
 root = 'https://raw.githubusercontent.com/cgre-aachen/gempy_data/master/data/input_data/turner_syncline/'
 root2 = 'https://raw.githubusercontent.com/cgre-aachen/gempy_data/master/data/input_data/australia/'

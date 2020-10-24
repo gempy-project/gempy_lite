@@ -11,9 +11,9 @@ try:
 except Exception as e:  # pragma: no cover
     warnings.warn('Unable to enable faulthandler:\n%s' % str(e))
 
-import gempy as gp
+import gempy_lite as gp
 import matplotlib.pyplot as plt
-from gempy.core.grid_modules.topography import Topography
+from gempy_lite.core.grid_modules.topography import Topography
 import pytest
 
 import numpy as np

@@ -1,6 +1,6 @@
 # Importing GemPy
-import gempy as gp
-from gempy.assets.geophysics import MagneticsPreprocessing
+import gempy_lite as gp
+from gempy_lite.assets.geophysics import MagneticsPreprocessing
 
 # Importing auxiliary libraries
 import numpy as np

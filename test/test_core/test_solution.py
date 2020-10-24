@@ -1,7 +1,7 @@
-import gempy
+import gempy_lite
 import os
 import numpy as np
-import gempy as gp
+import gempy_lite as gp
 import matplotlib.pyplot as plt
 input_path = os.path.dirname(__file__)+'/../input_data'
 
@@ -11,14 +11,14 @@ def test_rescaled_marching_cube(interpolator):
     2 Horizontal layers with drift 0
     """
     # Importing the data from csv files and setting extent and resolution
-    geo_data = gempy.create_data('Simple interpolator', [0, 10, 0, 10, -10, 0], [50, 50, 50],
-                                 path_o=input_path + "/GeoModeller/test_a/test_a_Foliations.csv",
-                                 path_i=input_path + "/GeoModeller/test_a/test_a_Points.csv")
+    geo_data = gempy_lite.create_data('Simple interpolator', [0, 10, 0, 10, -10, 0], [50, 50, 50],
+                                      path_o=input_path + "/GeoModeller/test_a/test_a_Foliations.csv",
+                                      path_i=input_path + "/GeoModeller/test_a/test_a_Points.csv")
 
     geo_data.set_theano_function(interpolator)
 
     # Compute model
-    sol = gempy.compute_model(geo_data, compute_mesh_options={'rescale': True})
+    sol = gempy_lite.compute_model(geo_data, compute_mesh_options={'rescale': True})
     print(sol.vertices)
 
     return geo_data
@@ -26,7 +26,7 @@ def test_rescaled_marching_cube(interpolator):
 
 def test_custom_grid_solution(model_horizontal_two_layers):
     """
-    Integration test for a gempy model using a custom grid
+    Integration test for a gempy_lite model using a custom grid
 
     2 Horizontal layers with drift 0
 
@@ -45,7 +45,7 @@ def test_custom_grid_solution(model_horizontal_two_layers):
     # set the theano function
 
     # Compute model
-    sol = gempy.compute_model(geo_model, compute_mesh=False)
+    sol = gempy_lite.compute_model(geo_model, compute_mesh=False)
     assert sol.custom.shape == (2,1,5)
 
 

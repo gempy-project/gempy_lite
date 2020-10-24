@@ -1,5 +1,5 @@
 import sys, os
-# Path to development gempy
+# Path to development gempy_lite
 sys.path.append('../../..')
 
 # Path to development pynoddy
@@ -13,7 +13,7 @@ from matplotlib import rcParams
 rcParams['font.size'] = 15
 # determine path of repository to set paths corretly below
 repo_path = os.path.realpath('../../..')
-import gempy as gp
+import gempy_lite as gp
 import pynoddy
 
 import pynoddy.history

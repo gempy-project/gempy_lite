@@ -1,9 +1,9 @@
 import os
 import pytest
-import gempy as gp
+import gempy_lite as gp
 import numpy as np
 import matplotlib.pyplot as plt
-from gempy.plot.vista import GemPyToVista
+from gempy_lite.plot.vista import GemPyToVista
 
 input_path = os.path.dirname(__file__) + '/../../notebooks/data'
 
@@ -17,7 +17,7 @@ class TestVista:
         Args:
             one_fault_model:
         """
-        from gempy.plot.vista import GemPyToVista
+        from gempy_lite.plot.vista import GemPyToVista
 
         return GemPyToVista(one_fault_model_no_interp,
                             #plotter_type='background')
@@ -29,7 +29,7 @@ class TestVista:
         Args:
             one_fault_model:
         """
-        from gempy.plot.vista import GemPyToVista
+        from gempy_lite.plot.vista import GemPyToVista
 
         return GemPyToVista(one_fault_model_no_interp,
                             plotter_type='background')
@@ -40,7 +40,7 @@ class TestVista:
         Args:
             one_fault_model_solution:
         """
-        from gempy.plot.vista import GemPyToVista
+        from gempy_lite.plot.vista import GemPyToVista
 
         return GemPyToVista(one_fault_model_solution, plotter_type='basic',
                             off_screen=True
@@ -53,7 +53,7 @@ class TestVista:
             one_fault_model_solution:
         """
 
-        from gempy.plot.vista import GemPyToVista
+        from gempy_lite.plot.vista import GemPyToVista
         one_fault_model_solution.update_additional_data()
         one_fault_model_solution.update_to_interpolator()
         one_fault_model_solution.set_topography()

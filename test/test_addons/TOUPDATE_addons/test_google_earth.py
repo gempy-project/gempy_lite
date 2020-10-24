@@ -10,13 +10,13 @@ use("Agg")
 
 import sys
 import numpy as np
-# These two lines are necessary only if gempy is not installed
-sys.path.append("../../gempy/")
+# These two lines are necessary only if gempy_lite is not installed
+sys.path.append("../../gempy_lite/")
 sys.path.append("../../../remote-geomod/rgeomod")
-sys.path.append("../gempy/")
+sys.path.append("../gempy_lite/")
 sys.path.append("/home/miguel/PycharmProjects/remote-geomod/")
-# Importing gempy
-import gempy as gp
+# Importing gempy_lite
+import gempy_lite as gp
 import pytest
 
 #import gdal
@@ -90,7 +90,7 @@ def TOUPDATE_rgeomod_integration(theano_f):
     plt.colorbar(dtmp, label="Elevation [m]");
     plt.savefig(input_path+"temp/DTM.pdf")
 
-    # To be able to use gempy plot functionality we need to create a dummy geo_model object with the
+    # To be able to use gempy_lite plot functionality we need to create a dummy geo_model object with the
     # resoluion we want. In this case resolution=[339, 271, 1]
     import copy
     geo_data_dummy = copy.deepcopy(geo_data)
@@ -98,7 +98,7 @@ def TOUPDATE_rgeomod_integration(theano_f):
 
 
 
-    # convert the dtm to a gempy-suitable raveled grid
+    # convert the dtm to a gempy_lite-suitable raveled grid
     points = rgeomod.convert_dtm_to_gempy_grid(raster, dtm)
 
 

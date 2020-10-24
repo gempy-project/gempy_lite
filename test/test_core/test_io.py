@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-import gempy as gp
+import gempy_lite as gp
 import pooch
 
 

@@ -1,4 +1,4 @@
-import gempy as gp
+import gempy_lite as gp
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest

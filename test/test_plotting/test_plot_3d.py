@@ -1,4 +1,4 @@
-import gempy as gp
+import gempy_lite as gp
 import pyvista as pv
 import matplotlib.pyplot as plt
 import warnings

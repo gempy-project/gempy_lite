@@ -1,7 +1,7 @@
 import pytest
-from gempy.assets import topology as tp
+from gempy_lite.assets import topology as tp
 import numpy as np
-import gempy as gp
+import gempy_lite as gp
 import matplotlib.pyplot as plt
 
 

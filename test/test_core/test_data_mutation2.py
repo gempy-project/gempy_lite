@@ -5,7 +5,7 @@ import sys, os
 sys.path.append("../..")
 
 # Importing GemPy
-import gempy as gp
+import gempy_lite as gp
 import pytest
 
 
@@ -31,7 +31,7 @@ def test_add_point():
 
 
 def test_restricting_wrapper():
-    from gempy.core.model import RestrictingWrapper
+    from gempy_lite.core.model import RestrictingWrapper
     surface = gp.Surfaces(gp.core.data_modules.stack.Series(gp.core.data_modules.stack.Faults()))
 
     s = RestrictingWrapper(surface)

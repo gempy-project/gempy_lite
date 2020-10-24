@@ -1,13 +1,13 @@
 import pytest
 import sys, os
 
-from gempy.addons.gempy_to_rexfile import GemPyToRex
+from gempy_lite.addons.gempy_to_rexfile import GemPyToRex
 
 sys.path.append("../..")
-import gempy
+import gempy_lite
 request = pytest.importorskip("requests")
-from gempy.addons import gempy_to_rexfile as gtr
-from gempy.addons import rex_api
+from gempy_lite.addons import gempy_to_rexfile as gtr
+from gempy_lite.addons import rex_api
 pyqrcode = pytest.importorskip("pyqrcode")
 input_path = os.path.dirname(__file__)+'/../input_data'
 
@@ -20,7 +20,7 @@ class TestGemPyToREX:
         geo_data = model_horizontal_two_layers
 
         # Compute model
-        sol = gempy.compute_model(geo_data, compute_mesh_options={'rescale': True})
+        sol = gempy_lite.compute_model(geo_data, compute_mesh_options={'rescale': True})
 
         return geo_data
 
@@ -78,7 +78,7 @@ class TestGemPyToREX:
         gtr.write_rex(rex_bytes, path=os.path.dirname(__file__) + '/rexfiles/gtr_test')
 
     def test_rex_bytes_to_file_except(self):
-        model = gempy.create_data(extent=[0,10,0,10,0,10])
+        model = gempy_lite.create_data(extent=[0, 10, 0, 10, 0, 10])
         model.set_default_surfaces()
         model._surfaces.df['isActive'] = False
         with pytest.raises(RuntimeError):
@@ -86,8 +86,8 @@ class TestGemPyToREX:
 
     @pytest.skip(reason="Needs token and secret. (@leguark they are in notion)")
     def test_plot_ar(self, geo_model):
-        tag = gempy.plot.plot_ar(geo_model,
-                                 api_token='foo', \
-                                 project_name='Alesmodel',
-                                 secret='bar')
+        tag = gempy_lite.plot.plot_ar(geo_model,
+                                      api_token='foo', \
+                                      project_name='Alesmodel',
+                                      secret='bar')
         print(tag.display_tag(reverse=False))

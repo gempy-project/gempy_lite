@@ -1,6 +1,6 @@
 # These two lines are necessary only if GemPy is not installed
 # Importing GemPy
-import gempy as gp
+import gempy_lite as gp
 
 # Importing auxiliary libraries
 import numpy as np

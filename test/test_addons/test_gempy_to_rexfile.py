@@ -3,12 +3,12 @@ import pytest
 import sys, os
 import numpy as np
 
-from gempy.addons.gempy_to_rexfile import GemPyToRex, geomodel_to_rex
+from gempy_lite.addons.gempy_to_rexfile import GemPyToRex, geomodel_to_rex
 
 # sys.path.append("../..")
-import gempy
-from gempy.addons import gempy_to_rexfile as gtr
-from gempy.addons import rex_api
+import gempy_lite
+from gempy_lite.addons import gempy_to_rexfile as gtr
+from gempy_lite.addons import rex_api
 input_path = os.path.dirname(__file__)+'/../input_data'
 
 
@@ -41,7 +41,7 @@ class TestGemPyToRexClass:
         model_file = pooch.retrieve(url="https://github.com/cgre-aachen/gempy_data/raw/master/data/gempy_models/combination.zip",
                                     known_hash=None)
 
-        geo_model = gempy.load_model(name='combination', path=model_file)
+        geo_model = gempy_lite.load_model(name='combination', path=model_file)
         gempy_to_rex = GemPyToRex()
         bytes = gempy_to_rex(geo_model)
         print(bytes)

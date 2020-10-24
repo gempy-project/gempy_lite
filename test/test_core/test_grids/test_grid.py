@@ -1,5 +1,5 @@
 # Importing GemPy
-import gempy as gp
+import gempy_lite as gp
 
 
 # Importing auxiliary libraries

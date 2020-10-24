@@ -1,6 +1,6 @@
 import os
-import gempy as gp
-from gempy.bayesian.theano_op import GemPyThOp
+import gempy_lite as gp
+from gempy_lite.bayesian.theano_op import GemPyThOp
 import pytest
 pm = pytest.importorskip("rgeomod")
 # import pymc3 as pm

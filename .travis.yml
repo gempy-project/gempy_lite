@@ -78,5 +78,5 @@ jobs:
           on:
             branch: release
           target_branch: gh-pages
-          fqdn: docs.gempy.org
+          fqdn: docs.gempy_lite.org
 cache: pip
