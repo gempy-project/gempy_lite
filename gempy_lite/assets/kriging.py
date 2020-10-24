@@ -14,10 +14,8 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
-from gempy_lite.plot import _visualization_2d, _plot, helpers
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
 from copy import deepcopy
+
 
 class domain(object):
 

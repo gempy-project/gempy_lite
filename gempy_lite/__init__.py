@@ -1,6 +1,6 @@
 """
 Module initialisation for GemPy
-Created on 21/10/2016
+Created on 24/10/2020
 
 @author: Miguel de la Varga
 """
@@ -31,13 +31,10 @@ from gempy_lite.core.model import Project, ImplicitCoKriging, AdditionalData, Fa
 
 from gempy_lite.core.solution import Solution
 from gempy_lite.addons.gempy_to_rexfile import geomodel_to_rex
-import gempy_lite.plot.plot_api as plot
-from gempy_lite.plot.plot_api import plot_2d, plot_3d
 
-from gempy_lite.plot import _plot as _plot
 
 assert sys.version_info[0] >= 3, "GemPy requires Python 3.X"  # sys.version_info[1] for minor e.g. 6
-__version__ = '2.2.7'
+__version__ = '0.1'
 
 if __name__ == '__main__':
     pass
