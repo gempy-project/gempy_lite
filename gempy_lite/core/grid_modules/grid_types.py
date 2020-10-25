@@ -294,7 +294,7 @@ class CustomGrid:
                grid
         """
         custom_grid = np.atleast_2d(custom_grid)
-        assert type(custom_grid) is np.ndarray and custom_grid.shape[1] is 3, 'The shape of new grid must be (n,3)' \
+        assert type(custom_grid) == np.ndarray and custom_grid.shape[1] == 3, 'The shape of new grid must be (n,3)' \
                                                                               ' where n is the number of points of ' \
                                                                               'the grid'
 

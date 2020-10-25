@@ -154,7 +154,7 @@ class GeometricData(object):
         if idx is None:
             idx = self.df.index
         idx = np.atleast_1d(idx)
-        if attribute is 'series':
+        if attribute == 'series':
             if surfaces.df.loc[~surfaces.df['isBasement']]['series'].isna().sum() != 0:
                 raise AttributeError('Surfaces does not have the correspondent series assigned. See'
                                      'Surfaces.map_series_from_series.')
@@ -1014,7 +1014,7 @@ class RescaledData(object):
 
         if attribute == 'centers':
             try:
-                assert value.shape[0] is 3
+                assert value.shape[0] == 3
 
                 self.df.loc['values', attribute] = value
 
