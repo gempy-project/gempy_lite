@@ -13,7 +13,6 @@ from gempy_lite.core.data_modules.geometric_data import Orientations, SurfacePoi
 from gempy_lite.core.data_modules.stack import Stack, Faults, Series
 from gempy_lite.core.data import AdditionalData, MetaData, Options, Structure, KrigingParameters
 from gempy_lite.core.solution import Solution
-from gempy_lite.core.interpolator import InterpolatorModel, InterpolatorGravity
 from gempy_lite.utils.meta import _setdoc, _setdoc_pro
 import gempy_lite.utils.docstring as ds
 from gempy_lite.plot.decorators import *
@@ -37,7 +36,7 @@ class RestrictingWrapper(object):
 
 
 @_setdoc_pro([Grid.__doc__, Faults.__doc__, Series.__doc__, Surfaces.__doc__, SurfacePoints.__doc__,
-              Orientations.__doc__, RescaledData.__doc__, AdditionalData.__doc__, InterpolatorModel.__doc__,
+              Orientations.__doc__, RescaledData.__doc__, AdditionalData.__doc__,
               Solution.__doc__])
 class ImplicitCoKriging(object):
     """This class handles all the mutation of the data objects of the model involved on the
@@ -78,8 +77,8 @@ class ImplicitCoKriging(object):
         self._additional_data = AdditionalData(self._surface_points, self._orientations, self._grid, self._faults,
                                                self._surfaces, self._rescaling)
 
-        self._interpolator = InterpolatorModel(self._surface_points, self._orientations, self._grid, self._surfaces,
-                                               self._stack, self._faults, self._additional_data)
+        # self._interpolator = InterpolatorModel(self._surface_points, self._orientations, self._grid, self._surfaces,
+        #                                        self._stack, self._faults, self._additional_data)
 
         self.solutions = Solution(self._grid, self._surfaces, self._stack)
 
@@ -157,7 +156,7 @@ class ImplicitCoKriging(object):
                                                     'kriging_parameters', 'kriging_data',
                                                     'rescaling_data'])
 
-    @_setdoc_pro(InterpolatorModel.__doc__)
+    @_setdoc_pro()
     @property
     def interpolator(self):
         """:class:`gempy_lite.core.interpolator.InterpolatorModel` [s0]"""
@@ -189,9 +188,7 @@ class ImplicitCoKriging(object):
 
         return idx
 
-    @_setdoc_pro([AdditionalData.update_structure.__doc__, InterpolatorModel.set_theano_shared_structure.__doc__,
-                  InterpolatorModel.modify_results_matrices_pro.__doc__,
-                  InterpolatorModel.modify_results_weights.__doc__])
+    @_setdoc_pro([AdditionalData.update_structure.__doc__])
     def update_structure(self, update_theano=None, update_series_is_active=True,
                          update_surface_is_active=True):
         """Update python and theano structure parameters.
@@ -240,12 +237,12 @@ class ImplicitCoKriging(object):
                 self._surfaces.df['isActive'] = (act_series & bool_surf_points) | self._surfaces.df['isBasement']
                 self._surfaces.df['hasData'] = (act_series | bool_surf_points)  # | self.surfaces.df['isBasement']
 
-        if update_theano == 'matrices':
-            self._interpolator.modify_results_matrices_pro()
-        elif update_theano == 'weights':
-            self._interpolator.modify_results_weights()
-
-        self._interpolator.set_theano_shared_structure()
+        # if update_theano == 'matrices':
+        #     self._interpolator.modify_results_matrices_pro()
+        # elif update_theano == 'weights':
+        #     self._interpolator.modify_results_weights()
+        #
+        # self._interpolator.set_theano_shared_structure()
         return self._additional_data.structure_data
 
     # region Grid
@@ -254,14 +251,14 @@ class ImplicitCoKriging(object):
 
         """
         self._rescaling.rescale_data()
-        self._interpolator.set_initial_results_matrices()
+        #self._interpolator.set_initial_results_matrices()
 
-        if 'gravity' in self._interpolator.theano_graph.output or 'magnetics' in self._interpolator.theano_graph.output:
-            self._interpolator.set_theano_shared_l0_l1()
-
-        # Check if grid is shared
-        if hasattr(self._interpolator.theano_graph.grid_val_T, 'get_value'):
-            self._interpolator.theano_graph.grid_val_T.set_value(self._grid.values_r.astype(self._interpolator.dtype))
+        # if 'gravity' in self._interpolator.theano_graph.output or 'magnetics' in self._interpolator.theano_graph.output:
+        #     self._interpolator.set_theano_shared_l0_l1()
+        #
+        # # Check if grid is shared
+        # if hasattr(self._interpolator.theano_graph.grid_val_T, 'get_value'):
+        #     self._interpolator.theano_graph.grid_val_T.set_value(self._grid.values_r.astype(self._interpolator.dtype))
 
     def set_active_grid(self, grid_name: Union[str, Iterable[str]], reset=False):
         """Set active a given or several grids.
@@ -472,7 +469,7 @@ class ImplicitCoKriging(object):
     def set_bottom_relation(self, series: Union[str, list], bottom_relation: Union[str, list]):
         """"""
         self._stack.set_bottom_relation(series, bottom_relation)
-        self._interpolator.set_theano_shared_relations()
+        #self._interpolator.set_theano_shared_relations()
         return self._stack
 
     @_setdoc_pro(Stack.reset_order_series.__doc__)
@@ -491,7 +488,7 @@ class ImplicitCoKriging(object):
         self._surfaces.df['series'].cat.add_categories(features_list, inplace=True)
         self._surface_points.df['series'].cat.add_categories(features_list, inplace=True)
         self._orientations.df['series'].cat.add_categories(features_list, inplace=True)
-        self._interpolator.set_flow_control()
+        #self._interpolator.set_flow_control()
         return self._stack
 
     @_setdoc(Series.add_series.__doc__, indent=False)
@@ -529,8 +526,8 @@ class ImplicitCoKriging(object):
         self.map_geometric_data_df(self._surface_points.df)
         self.map_geometric_data_df(self._orientations.df)
 
-        self._interpolator.set_theano_shared_relations()
-        self._interpolator.set_flow_control()
+       # self._interpolator.set_theano_shared_relations()
+       # self._interpolator.set_flow_control()
         return self._stack
 
     @_setdoc(delete_features.__doc__, indent=False)
@@ -597,7 +594,7 @@ class ImplicitCoKriging(object):
         self.map_geometric_data_df(self._orientations.df)
         self._orientations.sort_table()
 
-        self._interpolator.set_flow_control()
+        #self._interpolator.set_flow_control()
         self.update_structure()
         return self._stack
 
@@ -630,7 +627,7 @@ class ImplicitCoKriging(object):
         self.map_geometric_data_df(self._orientations.df)
         self._orientations.sort_table()
 
-        self._interpolator.set_flow_control()
+        #self._interpolator.set_flow_control()
         self.update_structure(update_theano='weights')
         return self._stack
 
@@ -695,8 +692,8 @@ class ImplicitCoKriging(object):
             self._stack.df.loc[feature_fault, 'BottomRelation'] = 'Fault'
 
         self._additional_data.structure_data.set_number_of_faults()
-        self._interpolator.set_theano_shared_relations()
-        self._interpolator.set_theano_shared_loop()
+        #self._interpolator.set_theano_shared_relations()
+        #self._interpolator.set_theano_shared_loop()
         if change_color:
             print('Fault colors changed. If you do not like this behavior, set change_color to False.')
             self._surfaces.colors.make_faults_black(feature_fault)
@@ -709,7 +706,7 @@ class ImplicitCoKriging(object):
         """"""
         s = self._faults.set_is_finite_fault(series_fault, toggle)  # change df in Fault obj
         # change shared theano variable for infinite factor
-        self._interpolator.set_theano_shared_is_finite()
+        #self._interpolator.set_theano_shared_is_finite()
         return s
 
     @_setdoc([Faults.set_fault_relation.__doc__], indent=False)
@@ -718,8 +715,8 @@ class ImplicitCoKriging(object):
         self._faults.set_fault_relation(rel_matrix)
 
         # Updating
-        self._interpolator.set_theano_shared_fault_relation()
-        self._interpolator.set_theano_shared_weights()
+        #self._interpolator.set_theano_shared_fault_relation()
+        #self._interpolator.set_theano_shared_weights()
         return self._faults.faults_relations_df
 
     # endregion
@@ -1029,12 +1026,12 @@ class ImplicitCoKriging(object):
         if recompute_rescale_factor is True or idx < 20:
             # This will rescale all data again
             self._rescaling.rescale_data()
-            self._interpolator.set_theano_shared_kriging()
+            #self._interpolator.set_theano_shared_kriging()
         else:
             # This branch only recompute the added point
             self._rescaling.set_rescaled_surface_points(idx)
         self.update_structure(update_theano='matrices')
-        self._interpolator.set_theano_shared_nuggets()
+        #self._interpolator.set_theano_shared_nuggets()
 
         return self._surface_points, idx
 
@@ -1089,7 +1086,7 @@ class ImplicitCoKriging(object):
         if recompute_rescale_factor is True or np.atleast_1d(indices).shape[0] < 20:
             # This will rescale all data again
             self._rescaling.rescale_data()
-            self._interpolator.set_theano_shared_kriging()
+            #self._interpolator.set_theano_shared_kriging()
         else:
             # This branch only recompute the added point
             self._rescaling.set_rescaled_surface_points(indices)
@@ -1099,8 +1096,8 @@ class ImplicitCoKriging(object):
         if is_surface == True:
             self.update_structure(update_theano='matrices')
 
-        if 'smooth' in kwargs:
-            self._interpolator.set_theano_shared_nuggets()
+        #if 'smooth' in kwargs:
+            #self._interpolator.set_theano_shared_nuggets()
 
         return self._surface_points
 
@@ -1143,7 +1140,7 @@ class ImplicitCoKriging(object):
             # This branch only recompute the added point
             self._rescaling.set_rescaled_orientations(idx)
         self.update_structure(update_theano='weights')
-        self._interpolator.set_theano_shared_nuggets()
+        #self._interpolator.set_theano_shared_nuggets()
 
         return self._orientations, idx
 
@@ -1166,8 +1163,8 @@ class ImplicitCoKriging(object):
 
         if is_surface:
             self.update_structure(update_theano='weights')
-        if 'smooth' in kwargs:
-            self._interpolator.set_theano_shared_nuggets()
+        #if 'smooth' in kwargs:
+        #    self._interpolator.set_theano_shared_nuggets()
         return self._orientations
 
     # endregion
@@ -1186,9 +1183,9 @@ class ImplicitCoKriging(object):
     @_setdoc(KrigingParameters.modify_kriging_parameters.__doc__, indent=False, position='beg')
     def modify_kriging_parameters(self, attribute, value, **kwargs):
         self._additional_data.kriging_data.modify_kriging_parameters(attribute, value, **kwargs)
-        self._interpolator.set_theano_shared_kriging()
+        #self._interpolator.set_theano_shared_kriging()
         if attribute == 'drift equations':
-            self._interpolator.set_initial_results()
+         #   self._interpolator.set_initial_results()
             self.update_structure()
         return self._additional_data.kriging_data
 
@@ -1319,8 +1316,8 @@ class ImplicitCoKriging(object):
         # For the drift equations.
         self._additional_data.update_default_kriging()
 
-        if update_interpolator is True:
-            self._interpolator.set_theano_shared_structure(reset_ctrl=True)
+        #if update_interpolator is True:
+        #    self._interpolator.set_theano_shared_structure(reset_ctrl=True)
 
         return True
 
@@ -1363,8 +1360,7 @@ class ImplicitCoKriging(object):
         return True
 
     # region Theano interface
-    @_setdoc(InterpolatorModel.__doc__)
-    def set_theano_graph(self, interpolator: InterpolatorModel, update_structure=True, update_kriging=True):
+    def set_theano_graph(self, interpolator, update_structure=True, update_kriging=True):
         """ Pass a theano graph of a Interpolator instance other than the Model compose
 
         Use this method only if you know what are you doing!
@@ -1376,14 +1372,14 @@ class ImplicitCoKriging(object):
              True """
         warnings.warn('This function is going to be deprecated. Use Model.set_theano_function instead',
                       DeprecationWarning)
-        self._interpolator.theano_graph = interpolator.theano_graph
-        self._interpolator.theano_function = interpolator.theano_function
+        #self._interpolator.theano_graph = interpolator.theano_graph
+        #self._interpolator.theano_function = interpolator.theano_function
         self.update_additional_data(update_structure=update_structure, update_kriging=update_kriging)
         self.update_to_interpolator()
         return True
 
     # @_setdoc(InterpolatorModel.__doc__)
-    def set_theano_function(self, interpolator: InterpolatorModel,
+    def set_theano_function(self, interpolator,
                             update_structure=True, update_kriging=True):
         """Pass a theano function and its correspondent graph from an Interpolator
          instance other than the Model compose
@@ -1401,8 +1397,8 @@ class ImplicitCoKriging(object):
             :class:`gempy_lite.core.interpolator.InterpolatorModel`
         """
 
-        self._interpolator.theano_graph = interpolator.theano_graph
-        self._interpolator.theano_function = interpolator.theano_function
+        #self._interpolator.theano_graph = interpolator.theano_graph
+        #self._interpolator.theano_function = interpolator.theano_function
         self.update_additional_data(update_structure=update_structure, update_kriging=update_kriging)
         self.update_to_interpolator()
 
@@ -1427,9 +1423,9 @@ class ImplicitCoKriging(object):
         Returns:
             True
         """
-        self._interpolator.set_all_shared_parameters()
-        if reset is True:
-            self._interpolator.reset_flow_control_initial_results()
+        #self._interpolator.set_all_shared_parameters()
+        #if reset is True:
+        #    self._interpolator.reset_flow_control_initial_results()
         return True
 
     # endregion

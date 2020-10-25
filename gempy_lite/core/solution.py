@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Union
 import warnings
-from skimage import measure
+# from skimage import measure
 from gempy_lite.utils.input_manipulation import find_interfaces_from_block_bottoms
 from gempy_lite.core.data import Grid, Surfaces
 from gempy_lite.core.data_modules.stack import Series
@@ -197,6 +197,7 @@ class Solution(object):
             :func:`skimage.measure.marching_cubes`
 
         """
+        raise NotImplementedError()
         rg = self.grid.regular_grid
         spacing = self.grid.regular_grid.get_dx_dy_dz(rescale=rescale)
         vertices, simplices, normals, values = measure.marching_cubes(

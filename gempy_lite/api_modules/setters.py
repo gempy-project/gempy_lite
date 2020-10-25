@@ -4,7 +4,7 @@
 from gempy_lite import get_data
 from gempy_lite.utils.meta import _setdoc, _setdoc_pro
 from gempy_lite.utils import docstring as ds
-from gempy_lite.core.model import Model, InterpolatorModel
+from gempy_lite.core.model import Model
 from typing import Union
 import warnings
 import numpy as np
@@ -15,7 +15,6 @@ warnings.filterwarnings("ignore",
                         append=True)
 
 
-@_setdoc([InterpolatorModel.__doc__])
 @_setdoc_pro([Model.__doc__, ds.compile_theano, ds.theano_optimizer])
 def set_interpolator(geo_model: Model, output: list = None, compile_theano: bool = True,
                      theano_optimizer=None, verbose: list = None, grid=None, type_=None,

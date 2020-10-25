@@ -1,6 +1,6 @@
 import numpy as np
-from .create_topography import LoadDEMArtificial, LoadDEMGDAL
-import skimage
+from .create_topography import LoadDEMArtificial
+
 
 
 class Topography:
@@ -75,6 +75,10 @@ class Topography:
         raise NotImplementedError
 
     def resize_topo(self):
+        try:
+            import skimage
+        except ImportError:
+            raise ImportError('skimage necessary to deal with topography,')
         regular_grid_topo = skimage.transform.resize(
             self.values_2d,
             (self.regular_grid_resolution[0], self.regular_grid_resolution[1]),
@@ -95,9 +99,12 @@ class Topography:
 
         self.set_values(dem.get_values())
 
+    @DeprecationWarning
     def load_from_gdal(self, filepath):
-        dem = LoadDEMGDAL(filepath, extent=self.extent)
-        self.set_values(dem.get_values())
+        raise NotImplementedError('load from gdal is not supported anymore.'
+                                  ' Use gemgis.')
+        #dem = LoadDEMGDAL(filepath, extent=self.extent)
+        #self.set_values(dem.get_values())
         # self.source = 'gdal'
 
     def save(self, path):
