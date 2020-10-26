@@ -1,10 +1,13 @@
 from gempy_lite.core.unstructured_data import UnstructGemPy
 import xarray as xr
+import pytest
+
 
 def test_all_running(model_horizontal_two_layers):
     print(model_horizontal_two_layers.surfaces)
 
 
+@pytest.mark.skip
 def test_unstruct_gempy(model_horizontal_two_layers):
     ug = UnstructGemPy(
         model_horizontal_two_layers.surfaces.df,
@@ -15,6 +18,7 @@ def test_unstruct_gempy(model_horizontal_two_layers):
     print(ug)
 
 
+@pytest.mark.skip
 def test_combine_stack_surfaces(model_horizontal_two_layers):
     surf = model_horizontal_two_layers.surfaces.df
     stack = model_horizontal_two_layers.stack.df

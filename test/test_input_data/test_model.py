@@ -118,56 +118,8 @@ def test_define_sequential_pile(map_sequential_pile):
     print(map_sequential_pile._surfaces)
 
 
-def test_compute_model(interpolator, map_sequential_pile):
+def test_kriging_mutation(map_sequential_pile):
     geo_model = map_sequential_pile
-    geo_model.set_theano_graph(interpolator)
-
-    gp.compute_model(geo_model, compute_mesh=False)
-
-    test_values = [45, 150, 2500]
-    if False:
-        np.save(input_path+'/test_integration_lith_block.npy', geo_model.solutions.lith_block[test_values])
-
-    # Load model
-    real_sol = np.load(input_path + '/test_integration_lith_block.npy')
-
-    # We only compare the block because the absolute pot field I changed it
-    np.testing.assert_array_almost_equal(np.round(geo_model.solutions.lith_block[test_values]), real_sol, decimal=0)
-
-    gp.plot.plot_2d(geo_model, cell_number=25,
-                    direction='y', show_data=True)
-    plt.savefig(os.path.dirname(__file__)+'/../figs/test_integration_lith_block')
-
-    gp.plot.plot_2d(geo_model, cell_number=25, series_n=1, N=15, show_scalar=True,
-                    direction='y', show_data=True)
-
-    plt.savefig(os.path.dirname(__file__)+'/../figs/test_integration_scalar')
-
-
-def test_kriging_mutation(interpolator, map_sequential_pile):
-    geo_model = map_sequential_pile
-    geo_model.set_theano_graph(interpolator)
-
-    gp.compute_model(geo_model, compute_mesh=False)
-    gp.plot.plot_2d(geo_model, cell_number=25, show_scalar=True, series_n=1, N=15,
-                    direction='y', show_data=True)
-    print(geo_model.solutions.lith_block, geo_model._additional_data)
-    #plt.savefig(os.path.dirname(__file__)+'/figs/test_kriging_mutation')
 
     geo_model.modify_kriging_parameters('range', 1)
     geo_model.modify_kriging_parameters('drift equations', [0, 3])
-
-    print(geo_model.solutions.lith_block, geo_model._additional_data)
-    # copy dataframe before interpolator is calculated
-    pre = geo_model._additional_data.kriging_data.df.copy()
-
-    gp.set_interpolator(geo_model, compile_theano=True,
-                        theano_optimizer='fast_compile', update_kriging=False)
-    gp.compute_model(geo_model, compute_mesh=False)
-
-    gp.plot.plot_2d(geo_model, cell_number=25, series_n=1, N=15, show_boundaries=False,
-                    direction='y', show_data=True, show_lith=True)
-
-    print(geo_model.solutions.lith_block, geo_model._additional_data)
-    plt.savefig(os.path.dirname(__file__)+'/../figs/test_kriging_mutation2')
-    assert geo_model._additional_data.kriging_data.df['range'][0] == pre['range'][0]

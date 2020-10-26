@@ -24,11 +24,10 @@ sys.path.append("../../../gempy")
 import gempy_lite as gp
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def test_pile_geomodel(interpolator):
+def test_pile_geomodel():
     ve = 3
     extent = [451e3, 456e3, 6.7820e6, 6.7840e6, -2309 * ve, -1651 * ve]
 
@@ -70,19 +69,11 @@ def test_pile_geomodel(interpolator):
 
     geo_model._surface_points.df.reset_index(inplace=True, drop=True)
     geo_model._orientations.df.reset_index(inplace=True, drop=True)
-
-    geo_model.set_theano_function(interpolator)
-    gp.compute_model(geo_model)
-
-    gp.plot.plot_2d(geo_model, cell_number=25,
-                    direction='y', show_data=True)
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_lith_block')
 
     return geo_model
 
 
-def test_pile_geomodel_2(interpolator):
+def test_pile_geomodel_2():
     ve = 3
     extent = [451e3, 456e3, 6.7820e6, 6.7840e6, -2309 * ve, -1651 * ve]
 
@@ -124,18 +115,6 @@ def test_pile_geomodel_2(interpolator):
 
     geo_model._surface_points.df.reset_index(inplace=True, drop=True)
     geo_model._orientations.df.reset_index(inplace=True, drop=True)
-
-    geo_model.set_theano_function(interpolator)
-    gp.compute_model(geo_model)
-
-    gp.plot.plot_2d(geo_model, cell_number=25,
-                         direction='y', show_data=True)
-
-    from gempy_lite.plot.plot_api import plot_2d
-
-    p = plot_2d(geo_model, cell_number=[25])
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_lith_block')
 
     return geo_model
 
@@ -155,26 +134,12 @@ def test_reorder_series():
     print(geo_model._stack.df)
 
 
-def test_complete_model(tmpdir, interpolator):
+def test_complete_model(tmpdir):
     # ### Initializing the model:
     compute = True
 
     geo_model = gp.create_model('Geological_Model1')
     geo_model = gp.init_data(geo_model, extent=[0, 4000, 0, 2775, 200, 1200], resolution=[100, 10, 100])
-
-    if compute is True:
-        geo_model.set_theano_function(interpolator)
-
-    from gempy_lite.plot import visualization_2d as vv
-
-    # In this case perpendicular to the z axes
-    p2d = vv.Plot2D(geo_model)
-    p2d.create_figure((15, 8))
-    ax = p2d.add_section(direction='z', ax_pos=121)
-
-    ax2 = p2d.add_section(direction='y', ax_pos=122)
-    ax2.set_xlim(geo_model._grid.regular_grid.extent[0], geo_model._grid.regular_grid.extent[1])
-    ax2.set_ylim(geo_model._grid.regular_grid.extent[4], geo_model._grid.regular_grid.extent[5])
 
     geo_model.add_surfaces(['D', 'C', 'B', 'A'])
 
@@ -196,19 +161,6 @@ def test_complete_model(tmpdir, interpolator):
 
     geo_model.add_orientations(X=832, Y=2132, Z=500, surface='C',
                                orientation=[98, 17.88, 1])
-
-    p2d.plot_data(ax, direction='z')
-    p2d.plot_data(ax2, direction='y')
-
-    gp.compute_model(geo_model) if compute else None
-    p2d.plot_contacts(ax, direction='z', cell_number=-10)
-    p2d.plot_lith(ax, direction='z', cell_number=-10)
-
-    p2d.plot_contacts(ax2, direction='y', cell_number=5)
-    p2d.plot_lith(ax2, direction='y', cell_number=5)
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_complete')
-
     # -----------
     # Adding a fault
     geo_model.rename_features(['Cycle1'])
@@ -225,19 +177,6 @@ def test_complete_model(tmpdir, interpolator):
     geo_model.add_surface_points(X=1250, Y=1653, Z=800, surface='F1')
     # Add orientation
     geo_model.add_orientations(X=1280, Y=2525, Z=500, surface='F1', orientation=[272, 90, -1])
-
-    gp.compute_model(geo_model)
-
-    p2d.remove(ax)
-    p2d.plot_data(ax, direction='z', cell_number=-10)
-    p2d.plot_contacts(ax, direction='z', cell_number=-10)
-    p2d.plot_lith(ax, direction='z', cell_number=-10)
-
-    p2d.remove(ax2)
-    # Plot
-    p2d.plot_data(ax2, cell_number=5)
-    p2d.plot_lith(ax2, cell_number=5)
-    p2d.plot_contacts(ax2, cell_number=5)
 
     # surface B
     geo_model.add_surface_points(X=1447, Y=2554, Z=500, surface='B')
@@ -257,21 +196,6 @@ def test_complete_model(tmpdir, interpolator):
     geo_model.add_surface_points(X=2843, Y=2448, Z=600, surface='D')
     geo_model.add_surface_points(X=2873, Y=876, Z=700, surface='D')
 
-    # Compute
-    gp.compute_model(geo_model)
-
-    # Plot
-    p2d.remove(ax)
-    p2d.plot_data(ax, direction='z', cell_number=-10)
-    p2d.plot_contacts(ax, direction='z', cell_number=-10)
-    p2d.plot_lith(ax, direction='z', cell_number=-10)
-
-    p2d.remove(ax2)
-    p2d.plot_lith(ax2, cell_number=5)
-    p2d.plot_data(ax2, cell_number=5)
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_complete')
-
     # ----------------
     # Second cycle
     geo_model.add_features(['Cycle2'])
@@ -289,22 +213,6 @@ def test_complete_model(tmpdir, interpolator):
     # Orientation
     geo_model.add_orientations(X=1996, Y=47, Z=800, surface='G', orientation=[272, 5.54, 1])
 
-    # Compute
-    gp.compute_model(geo_model)
-
-    # Plot
-    p2d.remove(ax)
-    p2d.plot_data(ax, direction='z', cell_number=-10)
-    p2d.plot_contacts(ax, direction='z', cell_number=-10)
-    p2d.plot_lith(ax, direction='z', cell_number=-10)
-
-    p2d.remove(ax2)
-    p2d.plot_lith(ax2, cell_number=5)
-    p2d.plot_data(ax2, cell_number=5)
-    p2d.plot_contacts(ax2, cell_number=5)
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_complete')
-
 
     # ----------------
     # Second Fault
@@ -321,22 +229,6 @@ def test_complete_model(tmpdir, interpolator):
 
     geo_model.add_orientations(X=3132, Y=951, Z=700, surface='F2', orientation=[95, 90, 1])
 
-    # Compute
-    gp.compute_model(geo_model)
-
-    # Plot
-    p2d.remove(ax)
-    p2d.plot_data(ax, direction='z', cell_number=5, legend='force')
-    p2d.plot_lith(ax, direction='z', cell_number=5)
-    p2d.plot_contacts(ax, direction='z', cell_number=5)
-
-    p2d.remove(ax2)
-    p2d.plot_lith(ax2, cell_number=5)
-    p2d.plot_data(ax2, cell_number=5)
-    p2d.plot_contacts(ax2, cell_number=5)
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_complete')
-
     geo_model.add_surface_points(X=3135, Y=1300, Z=700, surface='D')
     geo_model.add_surface_points(X=3190, Y=969, Z=700, surface='D')
 
@@ -346,22 +238,6 @@ def test_complete_model(tmpdir, interpolator):
 
     geo_model.add_surface_points(X=3218, Y=1818, Z=890, surface='H')
     geo_model.add_surface_points(X=3934, Y=1207, Z=810, surface='H')
-
-    # Compute
-    gp.compute_model(geo_model)
-
-    # Plot
-    p2d.remove(ax)
-    p2d.plot_data(ax, direction='z', cell_number=5, legend='force')
-    p2d.plot_lith(ax, direction='z', cell_number=5)
-    p2d.plot_contacts(ax, direction='z',cell_number=5)
-
-    p2d.remove(ax2)
-    p2d.plot_lith(ax2, cell_number=5)
-    p2d.plot_data(ax2, cell_number=5)
-    p2d.plot_contacts(ax2, cell_number=5)
-
-    plt.savefig(os.path.dirname(__file__) + '/../figs/test_pile_complete')
 
 
 
