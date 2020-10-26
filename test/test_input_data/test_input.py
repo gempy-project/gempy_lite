@@ -1,21 +1,9 @@
-from gempy_lite.core.unstructured_data import UnstructGemPy
 import xarray as xr
 import pytest
 
 
 def test_all_running(model_horizontal_two_layers):
     print(model_horizontal_two_layers.surfaces)
-
-
-@pytest.mark.skip
-def test_unstruct_gempy(model_horizontal_two_layers):
-    ug = UnstructGemPy(
-        model_horizontal_two_layers.surfaces.df,
-        model_horizontal_two_layers.stack.df,
-        model_horizontal_two_layers.surface_points.df
-    )
-
-    print(ug)
 
 
 @pytest.mark.skip

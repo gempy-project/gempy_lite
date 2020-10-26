@@ -8,11 +8,12 @@ import pandas as pn
 from typing import Union, Iterable
 import warnings
 
-from gempy_lite.core.data_modules.geometric_data import Orientations, SurfacePoints, \
-    RescaledData, Surfaces, Grid
-from gempy_lite.core.data_modules.stack import Stack, Faults, Series
-from gempy_lite.core.data import AdditionalData, MetaData, Options, Structure, KrigingParameters
+from gempy_lite.core.kernel_data.geometric_data import Orientations, SurfacePoints, Surfaces
+from gempy_lite.core.kernel_data import KrigingParameters
+from gempy_lite.core.kernel_data.stack import Stack, Faults, Series
+from gempy_lite.core.model_data import MetaData, Options, AdditionalData, RescaledData
 from gempy_lite.core.solution import Solution
+from gempy_lite.core.structured_data import Grid
 from gempy_lite.utils.meta import _setdoc, _setdoc_pro
 import gempy_lite.utils.docstring as ds
 from gempy_lite.plot.decorators import *
@@ -45,11 +46,11 @@ class ImplicitCoKriging(object):
     Attributes:
         _grid (:class:`gempy.core.data.Grid`): [s0]
         _faults (:class:`gempy.core.data.Grid`): [s1]
-        _stack (:class:`gempy.core.data_modules.stack.Stack`): [s2]
+        _stack (:class:`gempy.core.kernel_data.stack.Stack`): [s2]
         _surfaces (:class:`gempy.core.data.Surfaces`): [s3]
-        _surface_points (:class:`gempy.core.data_modules.geometric_data.SurfacePoints`): [s4]
-        _orientations (:class:`gempy.core.data_modules.geometric_data.Orientations`): [s5]
-        _rescaling (:class:`gempy_lite.core.data_modules.geometric_data.Rescaling`): [s6]
+        _surface_points (:class:`gempy.core.kernel_data.geometric_data.SurfacePoints`): [s4]
+        _orientations (:class:`gempy.core.kernel_data.geometric_data.Orientations`): [s5]
+        _rescaling (:class:`gempy_lite.core.kernel_data.geometric_data.Rescaling`): [s6]
         _additional_data (:class:`gempy.core.data.AdditionalData`): [s7]
         _interpolator (:class:`gempy.core.interpolator.InterpolatorModel`): [s8]
         solutions (:class:`gempy_lite.core.solutions.Solutions`): [s9]
@@ -99,14 +100,14 @@ class ImplicitCoKriging(object):
     @_setdoc_pro(Faults.__doc__)
     @property
     def faults(self):
-        """:class:`gempy_lite.core.data_modules.stack.Faults` [s0]"""
+        """:class:`gempy_lite.core.kernel_data.stack.Faults` [s0]"""
         return RestrictingWrapper(self._faults,
                                   accepted_members=['__repr__', '_repr_html_', 'faults_relations_df'])
 
     @_setdoc_pro(Stack.__doc__)
     @property
     def stack(self):
-        """:class:`gempy_lite.core.data_modules.stack.Stack` [s0]"""
+        """:class:`gempy_lite.core.kernel_data.stack.Stack` [s0]"""
         return RestrictingWrapper(self._stack,
                                   accepted_members=['__repr__', '_repr_html_', 'df'])
 
@@ -129,21 +130,21 @@ class ImplicitCoKriging(object):
     @_setdoc_pro(SurfacePoints.__doc__)
     @property
     def surface_points(self):
-        """:class:`gempy_lite.core.data_modules.geometric_data.SurfacePoints` [s0]"""
+        """:class:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints` [s0]"""
         return RestrictingWrapper(self._surface_points,
                                   accepted_members=['__repr__', '_repr_html_', 'df'])
 
     @_setdoc_pro(Orientations.__doc__)
     @property
     def orientations(self):
-        """:class:`gempy_lite.core.data_modules.geometric_data.Orientations` [s0]"""
+        """:class:`gempy_lite.core.kernel_data.geometric_data.Orientations` [s0]"""
         return RestrictingWrapper(self._orientations,
                                   accepted_members=['__repr__', '_repr_html_', 'df'])
 
     @_setdoc_pro(RescaledData.__doc__)
     @property
     def rescaling(self):
-        """:class:`gempy_lite.core.data_modules.geometric_data.Rescaling` [s0]"""
+        """:class:`gempy_lite.core.kernel_data.geometric_data.Rescaling` [s0]"""
         return RestrictingWrapper(self._rescaling)
 
     @_setdoc_pro(AdditionalData.__doc__)
@@ -481,7 +482,7 @@ class ImplicitCoKriging(object):
             reset_order_series: if true [s0]
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Stack`
+            :class:`gempy_lite.core.kernel_data.stack.Stack`
 
         """
         self._stack.add_series(features_list, reset_order_series)
@@ -509,7 +510,7 @@ class ImplicitCoKriging(object):
             remove_data (bool): if True remove the geometric data associated with the feature
 
         Returns:
-             :class:`gempy_lite.core.data_modules.stack.Stack`
+             :class:`gempy_lite.core.kernel_data.stack.Stack`
 
         """
         indices = np.atleast_1d(indices)
@@ -552,7 +553,7 @@ class ImplicitCoKriging(object):
                   not contained in the mapping are passed through and extra categories in the mapping are ignored.
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Stack`
+            :class:`gempy_lite.core.kernel_data.stack.Stack`
 
 
         """
@@ -578,7 +579,7 @@ class ImplicitCoKriging(object):
             idx (str): name of the feature to be moved
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Stack`
+            :class:`gempy_lite.core.kernel_data.stack.Stack`
 
         """
         self._stack.modify_order_series(new_value, idx)
@@ -613,7 +614,7 @@ class ImplicitCoKriging(object):
            new_categories (list): list with all series names in the desired order.
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Stack`
+            :class:`gempy_lite.core.kernel_data.stack.Stack`
         """
         self._stack.reorder_series(new_categories)
         self._surfaces.df['series'].cat.reorder_categories(np.asarray(self._stack.df.index),
@@ -660,10 +661,10 @@ class ImplicitCoKriging(object):
             change_color (bool): If True faults surfaces get the default fault color (light gray)
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults`
+            :class:`gempy_lite.core.kernel_data.stack.Faults`
 
         See Also:
-            :class:`gempy_lite.core.data_modules.stack.Faults.set_is_fault`
+            :class:`gempy_lite.core.kernel_data.stack.Faults.set_is_fault`
 
         """
         feature_fault = np.atleast_1d(feature_fault)
@@ -920,7 +921,7 @@ class ImplicitCoKriging(object):
             bool add_basement: add a basement surface to the df.
 
         See Also:
-            :class:`gempy_lite.core.data_modules.geometric_data.SurfacePoints`
+            :class:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints`
 
         """
 
@@ -963,10 +964,10 @@ class ImplicitCoKriging(object):
             table (pn.Dataframe): table with surface points data.
 
         Returns:
-            :class:`gempy_lite.core.data_modules.geometric_data.Orientations`
+            :class:`gempy_lite.core.kernel_data.geometric_data.Orientations`
 
         See Also:
-            :class:`gempy_lite.core.data_modules.geometric_data.Orientations`
+            :class:`gempy_lite.core.kernel_data.geometric_data.Orientations`
 
         """
         g_x_name = kwargs.get('G_x_name', 'G_x')
@@ -1070,7 +1071,7 @@ class ImplicitCoKriging(object):
                 * surface: [s_surface_sp]
 
          Returns:
-            :class:`gempy_lite.core.data_modules.geometric_data.SurfacePoints`
+            :class:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints`
 
          """
 
@@ -1124,7 +1125,7 @@ class ImplicitCoKriging(object):
             recompute_rescale_factor: [s_recompute_rf]
 
         Returns:
-            :class:`gempy_lite.core.data_modules.geometric_data.Orientations`
+            :class:`gempy_lite.core.kernel_data.geometric_data.Orientations`
 
         """
 
@@ -1211,10 +1212,10 @@ class ImplicitCoKriging(object):
         type of functionality such as qgrid.
 
         Args:
-            **kwargs: Same as :func:`gempy_lite.core.data_modules.geometric_data.SurfacePoints.add_surface_points`
+            **kwargs: Same as :func:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints.add_surface_points`
 
         Returns:
-            :class:`gempy_lite.core.data_modules.geometric_data.SurfacePoints`
+            :class:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints`
 
         """
         if self._surface_points.df.shape[0] == 0:
@@ -1226,10 +1227,10 @@ class ImplicitCoKriging(object):
         """Set a default orientation if the df is empty. This is necessary for some type of functionality such as qgrid
 
          Args:
-             **kwargs: Same as :func::class:`gempy_lite.core.data_modules.geometric_data.Orientations.add_orientation`
+             **kwargs: Same as :func::class:`gempy_lite.core.kernel_data.geometric_data.Orientations.add_orientation`
 
          Returns:
-             :class:`gempy_lite.core.data_modules.geometric_data.Orientations`
+             :class:`gempy_lite.core.kernel_data.geometric_data.Orientations`
 
          """
         if self._orientations.df.shape[0] == 0:
@@ -1619,9 +1620,9 @@ class Project(ImplicitCoKriging):
 
         See Also:
 
-            * :class:`gempy_lite.core.data_modules.geometric_data.SurfacePoints.read_surface_points.`
+            * :class:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints.read_surface_points.`
 
-            * :class:`gempy_lite.core.data_modules.geometric_data.Orientations.read_orientations`
+            * :class:`gempy_lite.core.kernel_data.geometric_data.Orientations.read_orientations`
         """
         if 'update_surfaces' not in kwargs:
             kwargs['update_surfaces'] = True

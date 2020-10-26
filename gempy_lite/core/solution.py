@@ -3,8 +3,9 @@ from typing import Union
 import warnings
 # from skimage import measure
 from gempy_lite.utils.input_manipulation import find_interfaces_from_block_bottoms
-from gempy_lite.core.data import Grid, Surfaces
-from gempy_lite.core.data_modules.stack import Series
+from gempy_lite.core.structured_data import Grid
+from gempy_lite.core.kernel_data import Surfaces
+from gempy_lite.core.kernel_data.stack import Series
 from gempy_lite.utils.meta import _setdoc, _setdoc_pro
 import gempy_lite.utils.docstring as ds
 

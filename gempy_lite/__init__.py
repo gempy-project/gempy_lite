@@ -25,9 +25,10 @@ from gempy_lite.gempy_api import *
 from gempy_lite.api_modules.getters import *
 from gempy_lite.api_modules.setters import *
 from gempy_lite.api_modules.io import *
-from gempy_lite.core.model import Project, ImplicitCoKriging, AdditionalData, Faults, Grid, \
-    Orientations, RescaledData, Series, SurfacePoints, \
-    Surfaces, Options, Structure, KrigingParameters
+from gempy_lite.core.model import Project, ImplicitCoKriging, Faults, Grid, \
+    Orientations, Series, SurfacePoints
+from gempy_lite.core.kernel_data import Surfaces, Structure, KrigingParameters
+from gempy_lite.core.model_data import Options, RescaledData, AdditionalData
 
 from gempy_lite.core.solution import Solution
 from gempy_lite.addons.gempy_to_rexfile import geomodel_to_rex

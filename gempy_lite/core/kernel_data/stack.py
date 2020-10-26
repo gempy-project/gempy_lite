@@ -54,7 +54,7 @@ class Faults(object):
             offset_faults (bool): If True by default faults offset other faults
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults`
+            :class:`gempy_lite.core.kernel_data.stack.Faults`
 
         """
         series_fault = np.atleast_1d(series_fault)
@@ -120,7 +120,7 @@ class Faults(object):
             toggle (bool): if True, passing a name which is already True will set it False.
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults`
+            :class:`gempy_lite.core.kernel_data.stack.Faults`
         """
         if series_finite[0] is not None:
             # check if given series is/are in dataframe
@@ -144,7 +144,7 @@ class Faults(object):
              Rows affect (offset) columns
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults.faults_relations_df`
+            :class:`gempy_lite.core.kernel_data.stack.Faults.faults_relations_df`
 
         """
         # TODO: block the lower triangular matrix of being changed
@@ -269,7 +269,7 @@ class Series(object):
             bottom_relation (str{Onlap, Erode, Fault}, list[str]):
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Stack`
+            :class:`gempy_lite.core.kernel_data.stack.Stack`
         """
         self.df.loc[series_list, 'BottomRelation'] = bottom_relation
 
