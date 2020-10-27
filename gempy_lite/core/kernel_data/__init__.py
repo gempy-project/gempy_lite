@@ -186,18 +186,22 @@ class Surfaces(object):
 
     """
 
+    def __repr__(self):
+        return self.df[self._public_attr].to_string()
+
+    def _repr_html_(self):
+        return self.df[self._public_attr].style.applymap(self.background_color,
+                                                         subset=['color']).render()
+
     def __init__(self, series, surface_names=None, values_array=None, properties_names=None):
 
         # Other data objects
-        self.series = series
+        self.stack = series
 
         # Dataframe views
-        self._columns = ['surface', 'series', 'order_surfaces',
+        self._columns = ['surface', 'feature', 'order_surfaces',
                          'isBasement', 'isFault', 'isActive', 'hasData', 'color',
                          'vertices', 'edges', 'sfai', 'id']
-
-        self._columns_vis_drop = ['vertices', 'edges', 'sfai', 'isBasement', 'isFault',
-                                  'isActive', 'hasData']
 
         self._properites_vals = []
         self._private_attr = [
@@ -207,19 +211,20 @@ class Surfaces(object):
 
         # Init df
         df_ = pn.DataFrame(columns=self._columns)
-        self.df = df_.astype({'surface': str, 'series': 'category',
+        self.df = df_.astype({'surface': str, 'feature': 'category',
                               'order_surfaces': int,
                               'isBasement': bool, 'isFault': bool, 'isActive': bool, 'hasData': bool,
                               'color': bool, 'id': int, 'vertices': object, 'edges': object})
 
-        self.df['series'].cat.add_categories(['Default series'], inplace=True)
+        self.df['feature'].cat.add_categories(['Default series'], inplace=True)
 
         # Set initial values
         if surface_names is not None:
             self.set_surfaces_names(surface_names)
 
         if values_array is not None:
-            self.set_surfaces_values(values_array=values_array, properties_names=properties_names)
+            self.set_surfaces_values(values_array=values_array,
+                                     properties_names=properties_names)
 
         # Initialize aux objects
         self.colors = Colors(self)
@@ -227,18 +232,35 @@ class Surfaces(object):
     @property
     def _public_attr(self):
         """Properties values are arbitrary given by the user. e.g. porosity"""
-        fixed = ['surface', 'series', 'order_surfaces', 'isActive', 'color', 'id']
-        return fixed.append(self._properites_vals)
+        fixed = ['surface', 'feature', 'order_surfaces', 'isActive', 'color', 'id', *self._properites_vals]
+        return fixed
 
-    def __repr__(self):
-        c_ = self.df.columns[~(self.df.columns.isin(self._columns_vis_drop))]
+    @property
+    def series(self):
+        warnings.warn('Series will be deprecated use stack intead', DeprecationWarning)
+        return self.stack
 
-        return self.df[c_].to_string()
+    @property
+    def number_surfaces(self):
+        return self.df['surface'].nunique()
 
-    def _repr_html_(self):
-        c_ = self.df.columns[~(self.df.columns.isin(self._columns_vis_drop))]
+    @property
+    def number_surfaces_per_feature(self):
+        """
+        Set number of surfaces for each series
 
-        return self.df[c_].style.applymap(self.background_color, subset=['color']).render()
+        Returns:
+            :class:`pn.DataFrame`: df where Structural data is stored
+
+        """
+
+        # DEP 27.10
+        # len_sps = np.zeros(self.stack.number_features, dtype=int)
+        # surf_count = self.df.groupby('OrderFeature').surface.nunique()
+        # len_sps[surf_count.index - 1] = surf_count.values
+        #
+        # self.df.at['values', 'number surfaces per series'] = len_sps
+        return self.df.groupby('feature').surface.nunique().values
 
     def update_id(self, id_list: list = None):
         """
@@ -260,7 +282,7 @@ class Surfaces(object):
         return self
 
     def map_faults(self):
-        self.df['isFault'] = self.df['series'].map(self.series.faults.df['isFault'])
+        self.df['isFault'] = self.df['feature'].map(self.stack.faults.df['isFault'])
 
     @staticmethod
     def background_color(value):
@@ -307,9 +329,10 @@ class Surfaces(object):
              :class:`Surfaces`:
 
         """
+
         if self.df.shape[0] == 0:
             # TODO DEBUG: I am not sure that surfaces always has at least one entry. Check it
-            self.set_surfaces_names(['surface1', 'basement'])
+            self.set_surfaces_names(['surface1', 'surface2'])
         return self
 
     def set_surfaces_names_from_surface_points(self, surface_points):
@@ -402,7 +425,7 @@ class Surfaces(object):
         return self
 
     def reset_order_surfaces(self):
-        self.df['order_surfaces'] = self.df.groupby('series').cumcount() + 1
+        self.df['order_surfaces'] = self.df.groupby('feature').cumcount() + 1
 
     def modify_order_surfaces(self, new_value: int, idx: int, series_name: str = None):
         """
@@ -418,9 +441,9 @@ class Surfaces(object):
 
         """
         if series_name is None:
-            series_name = self.df.loc[idx, 'series']
+            series_name = self.df.loc[idx, 'feature']
 
-        group = self.df.groupby('series').get_group(series_name)['order_surfaces']
+        group = self.df.groupby('feature').get_group(series_name)['order_surfaces']
         assert np.isin(new_value, group), 'new_value must exist already in the order_surfaces group.'
         old_value = group[idx]
         self.df.loc[group.index, 'order_surfaces'] = group.replace([new_value, old_value], [old_value, new_value])
@@ -431,7 +454,7 @@ class Surfaces(object):
     def sort_surfaces(self):
         """Sort surfaces by series and order_surfaces"""
 
-        self.df.sort_values(by=['series', 'order_surfaces'], inplace=True)
+        self.df.sort_values(by=['feature', 'order_surfaces'], inplace=True)
         self.update_id()
         return self.df
 
@@ -475,8 +498,8 @@ class Surfaces(object):
 
         """
 
-        # Updating surfaces['series'] categories
-        self.df['series'].cat.set_categories(self.series.df.index, inplace=True)
+        # Updating surfaces['feature'] categories
+        self.df['feature'].cat.set_categories(self.stack.df.index, inplace=True)
         # TODO Fixing this. It is overriding the formations already mapped
         if mapping_object is not None:
             # If none is passed and series exist we will take the name of the
@@ -491,11 +514,11 @@ class Surfaces(object):
                         s.append(k)
                         f.append(form)
 
-                new_series_mapping = pn.DataFrame([pn.Categorical(s, self.series.df.index)],
-                                                  f, columns=['series'])
+                new_series_mapping = pn.DataFrame([pn.Categorical(s, self.stack.df.index)],
+                                                  f, columns=['feature'])
 
             elif isinstance(mapping_object, pn.Categorical):
-                # This condition is for the case we have surface on the index and in 'series' the category
+                # This condition is for the case we have surface on the index and in 'feature' the category
                 # TODO Test this
                 new_series_mapping = mapping_object
 
@@ -507,10 +530,10 @@ class Surfaces(object):
             idx = self.df.index[b]
 
             # Mapping
-            self.df.loc[idx, 'series'] = self.df.loc[idx, 'surface'].map(new_series_mapping['series'])
+            self.df.loc[idx, 'feature'] = self.df.loc[idx, 'surface'].map(new_series_mapping['feature'])
 
         # Fill nans
-        self.df['series'].fillna(self.series.df.index.values[-1], inplace=True)
+        self.df['feature'].fillna(self.stack.df.index.values[-1], inplace=True)
 
         # Reorganize the pile
         self.reset_order_surfaces()
@@ -579,8 +602,7 @@ class Surfaces(object):
 
         """
         # Check if there are values columns already
-        old_prop_names = self.df.columns[~self.df.columns.isin(['surface', 'series', 'order_surfaces',
-                                                                'id', 'isBasement', 'color'])]
+        old_prop_names = self.df.columns[~self.df.columns.isin(self._columns)]
         # Delete old
         self.delete_surface_values(old_prop_names)
 
@@ -601,7 +623,7 @@ class Surfaces(object):
 
         """
         properties_names = np.atleast_1d(properties_names)
-        assert ~np.isin(properties_names, ['surface', 'series', 'order_surfaces', 'id', 'isBasement', 'color']), \
+        assert ~np.isin(properties_names, ['surface', 'feature', 'order_surfaces', 'id', 'isBasement', 'color']), \
             'only property names can be modified with this method'
 
         self.df.loc[idx, properties_names] = values
@@ -701,7 +723,7 @@ class Structure(object):
             :class:`pn.DataFrame`: df where Structural data is stored
 
         """
-        len_series = self.surfaces.series.df.shape[0]
+        len_series = self.surfaces.stack.df.shape[0]
 
         # Array containing the size of every series. SurfacePoints.
         points_count = self.surface_points.df['OrderFeature'].value_counts(sort=False)
@@ -725,7 +747,7 @@ class Structure(object):
         """
         # Array containing the size of every series. orientations.
 
-        len_series_o = np.zeros(self.surfaces.series.df.shape[0], dtype=int)
+        len_series_o = np.zeros(self.surfaces.stack.df.shape[0], dtype=int)
         ori_count = self.orientations.df['OrderFeature'].value_counts(sort=False)
         len_series_o[ori_count.index - 1] = ori_count.values
 
@@ -741,7 +763,7 @@ class Structure(object):
             :class:`pn.DataFrame`: df where Structural data is stored
 
         """
-        len_sps = np.zeros(self.surfaces.series.df.shape[0], dtype=int)
+        len_sps = np.zeros(self.surfaces.stack.df.shape[0], dtype=int)
         surf_count = self.surface_points.df.groupby('OrderFeature'). \
             surface.nunique()
 

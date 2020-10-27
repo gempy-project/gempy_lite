@@ -219,6 +219,10 @@ class Series(object):
         """
         self.df.at[:, 'OrderFeature'] = pn.RangeIndex(1, self.df.shape[0] + 1)
 
+    @property
+    def number_features(self):
+        return self.df.shape[0]
+
     @_setdoc_pro(reset_order_series.__doc__)
     def set_series_index(self, series_order: Union[list, np.ndarray], reset_order_series=True):
         """
@@ -492,3 +496,7 @@ class Stack(Series, Faults):
     @property
     def faults(self):
         return self
+
+    @property
+    def number_features(self):
+        return self.df.shape[0]

@@ -3,7 +3,6 @@ import json
 
 import gempy_lite as gp
 
-
 # Importing auxiliary libraries
 import numpy as np
 import pandas as pd
@@ -44,8 +43,7 @@ def create_series(create_faults):
     return series
 
 
-@pytest.fixture(scope='module')
-def create_surfaces(create_series):
+def test_surfaces(create_series):
     series = create_series
     surfaces = gempy_lite.core.kernel_data.Surfaces(series)
     surfaces.set_surfaces_names(['foo', 'foo2', 'foo5'])
@@ -95,7 +93,7 @@ def create_surfaces(create_series):
     # are pandas categories. To get a overview of what this mean
     # check https://pandas.pydata.org/pandas-docs/stable/categorical.html.
 
-    print(surfaces.df['series'])
+    print(surfaces.df['feature'])
 
     print(surfaces.df['surface'])
 
@@ -113,7 +111,7 @@ def create_surfaces(create_series):
 
     # An advantage of categories is that they are order so no we can tidy the df by series and surface
 
-    surfaces.df.sort_values(by='series', inplace=True)
+    surfaces.df.sort_values(by='feature', inplace=True)
 
     # If we change the basement:
 
@@ -133,6 +131,9 @@ def create_surfaces(create_series):
 
     print(surfaces)
 
+    print(surfaces.number_surfaces_per_feature)
+    np.testing.assert_array_almost_equal(surfaces.number_surfaces_per_feature,
+                                         np.array([0, 2, 1, 0, 1], dtype=int))
     # We can use `set_is_fault` to choose which of our series are faults:
     return surfaces
 
@@ -156,10 +157,8 @@ def create_surface_points(create_surfaces, create_series):
     surface_points.map_data_from_surfaces(surfaces, 'series')
     print(surface_points)
 
-
     surface_points.map_data_from_surfaces(surfaces, 'id')
     print(surface_points)
-
 
     surface_points.map_data_from_series(create_series, 'OrderFeature')
     print(surface_points)
@@ -236,8 +235,8 @@ def create_rescaling(create_surface_points, create_orientations, create_grid):
 @pytest.fixture(scope='module')
 def create_additional_data(create_surface_points, create_orientations, create_grid, create_faults,
                            create_surfaces, create_rescaling):
-
-    ad = gempy_lite.core.model_data.AdditionalData(create_surface_points, create_orientations, create_grid, create_faults,
+    ad = gempy_lite.core.model_data.AdditionalData(create_surface_points, create_orientations, create_grid,
+                                                   create_faults,
                                                    create_surfaces, create_rescaling)
     return ad
 

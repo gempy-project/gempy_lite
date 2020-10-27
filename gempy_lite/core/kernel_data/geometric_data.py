@@ -307,7 +307,7 @@ class SurfacePoints(GeometricData):
 
         self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
         self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-        self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
+        self.map_data_from_series(self.surfaces.stack, 'OrderFeature', idx=idx)
 
         self.sort_table()
         return self, idx
@@ -348,7 +348,7 @@ class SurfacePoints(GeometricData):
             self.df.loc[idx, ['surface']] = surface_names
             self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
             self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-            self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
+            self.map_data_from_series(self.surfaces.stack, 'OrderFeature', idx=idx)
             self.sort_table()
         except KeyError:
             pass
@@ -615,7 +615,7 @@ class Orientations(GeometricData):
 
         self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
         self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-        self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
+        self.map_data_from_series(self.surfaces.stack, 'OrderFeature', idx=idx)
 
         self.sort_table()
         return self
@@ -663,7 +663,7 @@ class Orientations(GeometricData):
             self.df.loc[idx, ['surface']] = surface_names
             self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
             self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-            self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
+            self.map_data_from_series(self.surfaces.stack, 'OrderFeature', idx=idx)
             self.sort_table()
         except KeyError:
             pass
