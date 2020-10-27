@@ -1306,8 +1306,8 @@ class ImplicitCoKriging(object):
         self._surface_points.set_series_categories_from_series(self._stack)
         self._orientations.set_series_categories_from_series(self._stack)
 
-        self._surface_points.map_data_from_series(self._stack, 'order_series')
-        self._orientations.map_data_from_series(self._stack, 'order_series')
+        self._surface_points.map_data_from_series(self._stack, 'OrderFeature')
+        self._orientations.map_data_from_series(self._stack, 'OrderFeature')
 
         if sort_geometric_data is True:
             self._surface_points.sort_table()
@@ -1443,7 +1443,7 @@ class ImplicitCoKriging(object):
         """
         d['series'] = d['surface'].map(self._surfaces.df.set_index('surface')['series'])
         d['id'] = d['surface'].map(self._surfaces.df.set_index('surface')['id']).astype(int)
-        d['order_series'] = d['series'].map(self._stack.df['order_series']).astype(int)
+        d['OrderFeature'] = d['series'].map(self._stack.df['OrderFeature']).astype(int)
         return d
 
     def set_surface_order_from_solution(self):

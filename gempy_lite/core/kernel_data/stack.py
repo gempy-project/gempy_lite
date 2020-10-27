@@ -65,7 +65,7 @@ class Faults(object):
 
         if series_fault[0] is not None:
             assert np.isin(series_fault, self.df.index).all(), 'series_faults must already ' \
-                                                                                      'exist in the the series df.'
+                                                               'exist in the the series df.'
             if toggle is True:
                 self.df.loc[series_fault, 'isFault'] = self.df.loc[series_fault, 'isFault'] ^ True
             else:
@@ -89,7 +89,7 @@ class Faults(object):
 
         return self
 
-    def set_default_faults_relations(self, offset_faults:bool=None):
+    def set_default_faults_relations(self, offset_faults: bool = None):
         if offset_faults is not None:
             self._offset_faults = offset_faults
 
@@ -193,15 +193,17 @@ class Series(object):
 
     def __init__(self, faults, series_names: list = None):
 
+        self._default_values = [-1, 'Erosion', False]
+
         self.faults = faults
 
         if series_names is None:
             series_names = ['Default series']
 
         self.df = pn.DataFrame(np.array([[1, np.nan]]), index=pn.CategoricalIndex(series_names, ordered=False),
-                               columns=['order_series', 'BottomRelation'])
+                               columns=['OrderFeature', 'BottomRelation'])
 
-        self.df['order_series'] = self.df['order_series'].astype(int)
+        self.df['OrderFeature'] = self.df['OrderFeature'].astype(int)
         self.df['BottomRelation'] = pn.Categorical(['Erosion'], categories=['Erosion', 'Onlap', 'Fault'])
         self.df['isActive'] = False
 
@@ -215,7 +217,7 @@ class Series(object):
         """
         Reset the column order series to monotonic ascendant values.
         """
-        self.df.at[:, 'order_series'] = pn.RangeIndex(1, self.df.shape[0] + 1)
+        self.df.at[:, 'OrderFeature'] = pn.RangeIndex(1, self.df.shape[0] + 1)
 
     @_setdoc_pro(reset_order_series.__doc__)
     def set_series_index(self, series_order: Union[list, np.ndarray], reset_order_series=True):
@@ -247,12 +249,8 @@ class Series(object):
 
         # But we need to update the values too
         for c in series_order:
-            try:
-                self.df.loc[c] = [-1, 'Erosion', False, False, False]
-            # This is in case someone use the old series
-            except ValueError:
-                self.df.loc[c] = [-1, 'Erosion', False]
-                self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
+            self.df.loc[c] = self._default_values
+            self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
             self.faults.faults_relations_df.loc[c, c] = False
 
         self.faults.faults_relations_df.fillna(False, inplace=True)
@@ -302,11 +300,8 @@ class Series(object):
 
         for c in series_list:
             # This is in case someone wants to run the old series
-            try:
-                self.df.loc[c] = [-1, 'Erosion', False, False, False]
-            except ValueError:
-                self.df.loc[c] = [-1, 'Erosion', False]
-                self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
+            self.df.loc[c] = self._default_values
+            self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
             self.faults.faults_relations_df.loc[c, c] = False
 
         self.faults.faults_relations_df.fillna(False, inplace=True)
@@ -393,17 +388,17 @@ class Series(object):
         Returns:
             Series
         """
-        group = self.df['order_series']
+        group = self.df['OrderFeature']
         assert np.isin(new_value, group), 'new_value must exist already in the order_surfaces group.'
         old_value = group[series_name]
-        self.df['order_series'] = group.replace([new_value, old_value], [old_value, new_value])
+        self.df['OrderFeature'] = group.replace([new_value, old_value], [old_value, new_value])
         self.sort_series()
         self.update_faults_index_reorder()
 
         return self
 
     def sort_series(self):
-        self.df.sort_values(by='order_series', inplace=True)
+        self.df.sort_values(by='OrderFeature', inplace=True)
         self.df.index = self.df.index.reorder_categories(self.df.index.to_numpy())
 
     def update_faults_index_rename(self):
@@ -428,10 +423,6 @@ class Series(object):
         self.faults.set_default_faults_relations()
 
 
-class MockFault:
-    pass
-
-
 class Stack(Series, Faults):
     """Class that encapsulates all type of geological features. So far is Series and
           Faults
@@ -442,47 +433,56 @@ class Stack(Series, Faults):
              rel_matrix:
 
     """
-    def __init__(self, features_names: Iterable = None, fault_features: Iterable = None,
-                 rel_matrix: Iterable = None):
+
+    def __init__(
+            self,
+            features_names: Iterable = None,
+            fault_features: Iterable = None,
+            rel_matrix: Iterable = None
+    ):
+
+        self._public_attr = ['OrderFeature', 'BottomRelation', 'Level',
+                             'isActive', 'isFault', 'isFinite']
+        self._private_attr = ['isComputed']
+
+        self._default_values = [1, np.nan, 0, False, False, False, False]
 
         if features_names is None:
             features_names = ['Default series']
 
         # Set unique df
-        df_ = pn.DataFrame(np.array([[1, np.nan, False, False, False]]),
-                               index=pn.CategoricalIndex(features_names, ordered=False),
-                               columns=['order_series', 'BottomRelation', 'isActive', 'isFault', 'isFinite'])
+        df_ = pn.DataFrame(np.array([self._default_values]),
+                           index=pn.CategoricalIndex(features_names, ordered=False),
+                           columns=['OrderFeature', 'BottomRelation', 'Level',
+                                    'isActive', 'isFault', 'isFinite', 'isComputed'])
 
-        self.df = df_.astype({'order_series': int,
+        # Setting attribute types:
+        self.df = df_.astype({'OrderFeature': int,
                               'BottomRelation': 'category',
+                              'Level': int,
                               'isActive': bool,
                               'isFault': bool,
-                              'isFinite': bool})
+                              'isFinite': bool,
+                              'isComputed': bool})
 
-        self.df['order_series'] = self.df['order_series'].astype(int)
-        self.df['BottomRelation'] = pn.Categorical(['Erosion'], categories=['Erosion', 'Onlap', 'Fault'])
-        # self.df['isActive'] = False
-        # self.df['isFault'] = False
-        # self.df['isFinite'] = False
-        # self.faults = MockFault()
-        # self.faults.df = self.df
-
-        self.faults = self
-        self.faults_relations_df = pn.DataFrame(index=pn.CategoricalIndex(['Default series']),
-                                                columns=pn.CategoricalIndex(['Default series', '']), dtype='bool')
+        #self.df['OrderFeature'] = self.df['OrderFeature'].astype(int)
+        self.df['BottomRelation'] = pn.Categorical(
+            ['Erosion'],
+            categories=['Erosion', 'Onlap', 'Fault']
+        )
+        self.faults_relations_df = pn.DataFrame(
+            index=pn.CategoricalIndex(['Default series']),
+            columns=pn.CategoricalIndex(['Default series', '']),
+            dtype='bool'
+        )
 
         self.set_is_fault(series_fault=fault_features)
         self.set_fault_relation(rel_matrix=rel_matrix)
-        self.n_faults = 0
+
+        # Property that controls if by default ALL younger faults offset ALL
+        # older features
         self._offset_faults = False
 
-
-
-
-
-
-
-
-
-
-
+    @property
+    def faults(self):
+        return self

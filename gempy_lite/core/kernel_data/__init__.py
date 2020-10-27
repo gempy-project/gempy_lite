@@ -668,7 +668,7 @@ class Structure(object):
         # Extracting lengths
         # ==================
         # Array containing the size of every surface. SurfacePoints
-        lssp = self.surface_points.df.groupby('id')['order_series'].count().values
+        lssp = self.surface_points.df.groupby('id')['OrderFeature'].count().values
         lssp_nonzero = lssp[np.nonzero(lssp)]
 
         self.df.at['values', 'len surfaces surface_points'] = lssp_nonzero
@@ -687,7 +687,7 @@ class Structure(object):
         len_series = self.surfaces.series.df.shape[0]
 
         # Array containing the size of every series. SurfacePoints.
-        points_count = self.surface_points.df['order_series'].value_counts(sort=False)
+        points_count = self.surface_points.df['OrderFeature'].value_counts(sort=False)
         len_series_i = np.zeros(len_series, dtype=int)
         len_series_i[points_count.index - 1] = points_count.values
 
@@ -709,7 +709,7 @@ class Structure(object):
         # Array containing the size of every series. orientations.
 
         len_series_o = np.zeros(self.surfaces.series.df.shape[0], dtype=int)
-        ori_count = self.orientations.df['order_series'].value_counts(sort=False)
+        ori_count = self.orientations.df['OrderFeature'].value_counts(sort=False)
         len_series_o[ori_count.index - 1] = ori_count.values
 
         self.df.at['values', 'len series orientations'] = len_series_o
@@ -725,7 +725,7 @@ class Structure(object):
 
         """
         len_sps = np.zeros(self.surfaces.series.df.shape[0], dtype=int)
-        surf_count = self.surface_points.df.groupby('order_series'). \
+        surf_count = self.surface_points.df.groupby('OrderFeature'). \
             surface.nunique()
 
         len_sps[surf_count.index - 1] = surf_count.values

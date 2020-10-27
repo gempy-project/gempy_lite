@@ -1,10 +1,12 @@
 # Importing GemPy
+import json
+
 import gempy_lite as gp
 
 
 # Importing auxiliary libraries
 import numpy as np
-import pandas as pn
+import pandas as pd
 import matplotlib.pyplot as plt
 import pytest
 
@@ -146,7 +148,8 @@ def create_surface_points(create_surfaces, create_series):
 
     print(surface_points)
 
-    surface_points.set_surface_points(pn.DataFrame(np.random.rand(6, 3)), ['foo', 'foo5', 'lala', 'foo5', 'lala', 'feeeee'])
+    surface_points.set_surface_points(pd.DataFrame(np.random.rand(6, 3)),
+                                      ['foo', 'foo5', 'lala', 'foo5', 'lala', 'feeeee'])
 
     print(surface_points)
 
@@ -158,7 +161,7 @@ def create_surface_points(create_surfaces, create_series):
     print(surface_points)
 
 
-    surface_points.map_data_from_series(create_series, 'order_series')
+    surface_points.map_data_from_series(create_series, 'OrderFeature')
     print(surface_points)
 
     surface_points.sort_table()
@@ -198,7 +201,7 @@ def create_orientations(create_surfaces, create_series):
     orientations.map_data_from_surfaces(surfaces, 'id')
     print(orientations)
 
-    orientations.map_data_from_series(create_series, 'order_series')
+    orientations.map_data_from_series(create_series, 'OrderFeature')
     print(orientations)
 
     orientations.update_annotations()
@@ -260,7 +263,7 @@ class TestDataManipulation:
         return create_additional_data
 
 
-def test_stack():
+def test_stack(save=True):
     stack = gempy_lite.core.kernel_data.stack.Stack()
     stack.set_series_index(['foo', 'foo2', 'foo5', 'foo7'])
     stack.add_series('foo3')
@@ -268,7 +271,6 @@ def test_stack():
     stack.rename_series({'foo': 'boo'})
     stack.reorder_series(['foo3', 'boo', 'foo7', 'foo5'])
     stack.set_is_fault(['boo'])
-
     faults = stack
     faults.set_is_fault(['boo'])
 
@@ -277,3 +279,5 @@ def test_stack():
     faults.set_fault_relation(fr)
 
     stack.add_series('foo20')
+    print(stack.df)
+    assert stack.df.iloc[1, 4] == True

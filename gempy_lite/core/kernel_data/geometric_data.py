@@ -46,7 +46,7 @@ class GeometricData(object):
         # series
         self.df['series'] = 'Default series'
         self.df['series'] = self.df['series'].astype('category', copy=True)
-        #self.df['order_series'] = self.df['order_series'].astype('category', copy=True)
+        #self.df['OrderFeature'] = self.df['OrderFeature'].astype('category', copy=True)
 
         self.df['series'].cat.set_categories(self.surfaces.df['series'].cat.categories, inplace=True)
 
@@ -54,7 +54,7 @@ class GeometricData(object):
         self.df['id'] = np.nan
 
         # order_series
-        self.df['order_series'] = 1
+        self.df['OrderFeature'] = 1
         return self
 
     @staticmethod
@@ -74,7 +74,7 @@ class GeometricData(object):
         """
 
         # We order the pandas table by surface (also by series in case something weird happened)
-        self.df.sort_values(by=['order_series', 'id'],
+        self.df.sort_values(by=['OrderFeature', 'id'],
                             ascending=True, kind='mergesort',
                             inplace=True)
         return self.df
@@ -124,15 +124,15 @@ class GeometricData(object):
             idx = self.df.index
 
         idx = np.atleast_1d(idx)
-        if attribute in ['id', 'order_series']:
+        if attribute in ['id', 'OrderFeature']:
             self.df.loc[idx, attribute] = self.df['series'].map(series.df[attribute]).astype(int)
 
         else:
             self.df.loc[idx, attribute] = self.df['series'].map(series.df[attribute])
 
-        if type(self.df['order_series'].dtype) is pn.CategoricalDtype:
+        if type(self.df['OrderFeature'].dtype) is pn.CategoricalDtype:
 
-            self.df['order_series'].cat.remove_unused_categories(inplace=True)
+            self.df['OrderFeature'].cat.remove_unused_categories(inplace=True)
         return self
 
     @_setdoc_pro(Surfaces.__doc__)
@@ -159,7 +159,7 @@ class GeometricData(object):
                                      'Surfaces.map_series_from_series.')
             self.df.loc[idx, attribute] = self.df.loc[idx, 'surface'].map(surfaces.df.set_index('surface')[attribute])
 
-        elif attribute in ['id', 'order_series']:
+        elif attribute in ['id', 'OrderFeature']:
             self.df.loc[idx, attribute] = (self.df.loc[idx, 'surface'].map(surfaces.df.set_index('surface')[attribute])).astype(int)
         else:
 
@@ -205,10 +205,10 @@ class SurfacePoints(GeometricData):
 
         super().__init__(surfaces)
         self._columns_i_all = ['X', 'Y', 'Z', 'surface', 'series', 'X_std', 'Y_std', 'Z_std',
-                               'order_series', 'surface_number']
+                               'OrderFeature', 'surface_number']
 
         self._columns_i_1 = ['X', 'Y', 'Z', 'X_r', 'Y_r', 'Z_r', 'surface', 'series', 'id',
-                             'order_series', 'isFault', 'smooth']
+                             'OrderFeature', 'isFault', 'smooth']
 
         self._columns_rep = ['X', 'Y', 'Z', 'surface', 'series']
         self._columns_i_num = ['X', 'Y', 'Z', 'X_r', 'Y_r', 'Z_r']
@@ -307,7 +307,7 @@ class SurfacePoints(GeometricData):
 
         self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
         self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-        self.map_data_from_series(self.surfaces.series, 'order_series', idx=idx)
+        self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
 
         self.sort_table()
         return self, idx
@@ -348,7 +348,7 @@ class SurfacePoints(GeometricData):
             self.df.loc[idx, ['surface']] = surface_names
             self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
             self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-            self.map_data_from_series(self.surfaces.series, 'order_series', idx=idx)
+            self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
             self.sort_table()
         except KeyError:
             pass
@@ -485,9 +485,9 @@ class Orientations(GeometricData):
     def __init__(self, surfaces: Surfaces, coord=None, pole_vector=None, orientation=None, surface=None):
         super().__init__(surfaces)
         self._columns_o_all = ['X', 'Y', 'Z', 'G_x', 'G_y', 'G_z', 'dip', 'azimuth', 'polarity',
-                               'surface', 'series', 'id', 'order_series', 'surface_number']
+                               'surface', 'series', 'id', 'OrderFeature', 'surface_number']
         self._columns_o_1 = ['X', 'Y', 'Z', 'X_r', 'Y_r', 'Z_r', 'G_x', 'G_y', 'G_z', 'dip', 'azimuth', 'polarity',
-                             'surface', 'series', 'id', 'order_series', 'isFault']
+                             'surface', 'series', 'id', 'OrderFeature', 'isFault']
         self._columns_o_num = ['X', 'Y', 'Z', 'X_r', 'Y_r', 'Z_r', 'G_x', 'G_y', 'G_z', 'dip', 'azimuth', 'polarity']
         self._columns_rend = ['X', 'Y', 'Z', 'G_x', 'G_y', 'G_z', 'smooth', 'surface']
 
@@ -615,7 +615,7 @@ class Orientations(GeometricData):
 
         self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
         self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-        self.map_data_from_series(self.surfaces.series, 'order_series', idx=idx)
+        self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
 
         self.sort_table()
         return self
@@ -663,7 +663,7 @@ class Orientations(GeometricData):
             self.df.loc[idx, ['surface']] = surface_names
             self.map_data_from_surfaces(self.surfaces, 'series', idx=idx)
             self.map_data_from_surfaces(self.surfaces, 'id', idx=idx)
-            self.map_data_from_series(self.surfaces.series, 'order_series', idx=idx)
+            self.map_data_from_series(self.surfaces.series, 'OrderFeature', idx=idx)
             self.sort_table()
         except KeyError:
             pass
