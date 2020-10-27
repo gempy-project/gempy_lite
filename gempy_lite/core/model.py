@@ -1,7 +1,6 @@
 import os
 import shutil
 import sys
-from abc import ABC
 
 import numpy as np
 import pandas as pn
@@ -12,8 +11,8 @@ from gempy_lite.core.kernel_data.geometric_data import Orientations, SurfacePoin
 from gempy_lite.core.kernel_data import KrigingParameters
 from gempy_lite.core.kernel_data.stack import Stack, Faults, Series
 from gempy_lite.core.model_data import MetaData, Options, AdditionalData, RescaledData
-from gempy_lite.core.solution import Solution
-from gempy_lite.core.structured_data import Grid
+from gempy_lite.core.predictor.solution import Solution
+from gempy_lite.core.predictor.structured_data import Grid
 from gempy_lite.utils.meta import _setdoc, _setdoc_pro
 import gempy_lite.utils.docstring as ds
 from gempy_lite.plot.decorators import *
@@ -164,6 +163,10 @@ class ImplicitCoKriging(object):
         return RestrictingWrapper(self._interpolator,
                                   accepted_members=['__repr__', '_repr_html_',
                                                     'theano_graph'])
+
+    @property
+    def kriging(self):
+        return self._stack.kriging
 
     def _add_valid_idx_s(self, idx):
         if idx is None:
@@ -691,7 +694,7 @@ class ImplicitCoKriging(object):
         else:
             self._stack.df.loc[feature_fault, 'BottomRelation'] = 'Fault'
 
-        self._additional_data.structure_data.set_number_of_faults()
+        #self._additional_data.structure_data.set_number_of_faults()
         #self._interpolator.set_theano_shared_relations()
         #self._interpolator.set_theano_shared_loop()
         if change_color:
@@ -763,9 +766,9 @@ class ImplicitCoKriging(object):
 
         if remove_data:
             self._surface_points.del_surface_points(
-                self._surface_points.df[self._surface_points.df.surface.isin(surfaces_names)].index)
+                self._surface_points.df[self._surface_points.df.Surface.isin(surfaces_names)].index)
             self._orientations.del_orientation(
-                self._orientations.df[self._orientations.df.surface.isin(surfaces_names)].index)
+                self._orientations.df[self._orientations.df.Surface.isin(surfaces_names)].index)
 
         self._surface_points.df['Surface'].cat.remove_categories(surfaces_names, inplace=True)
         self._orientations.df['Surface'].cat.remove_categories(surfaces_names, inplace=True)
@@ -784,7 +787,7 @@ class ImplicitCoKriging(object):
 
         self._surfaces.rename_surfaces(to_replace, **kwargs)
         self._surface_points.df['Surface'].cat.rename_categories(to_replace, inplace=True)
-        self._orientations.df['surface'].cat.rename_categories(to_replace, inplace=True)
+        self._orientations.df['Surface'].cat.rename_categories(to_replace, inplace=True)
         return self._surfaces
 
     @_setdoc(Surfaces.modify_order_surfaces.__doc__, indent=False)
@@ -1182,7 +1185,7 @@ class ImplicitCoKriging(object):
     # region Kriging
     @_setdoc(KrigingParameters.modify_kriging_parameters.__doc__, indent=False, position='beg')
     def modify_kriging_parameters(self, attribute, value, **kwargs):
-        self._additional_data.kriging_data.modify_kriging_parameters(attribute, value, **kwargs)
+        self._stack.modify_parameter(attribute, value, **kwargs)
         #self._interpolator.set_theano_shared_kriging()
         if attribute == 'drift equations':
          #   self._interpolator.set_initial_results()

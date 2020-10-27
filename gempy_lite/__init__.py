@@ -30,7 +30,7 @@ from gempy_lite.core.model import Project, ImplicitCoKriging, Faults, Grid, \
 from gempy_lite.core.kernel_data import Surfaces, Structure, KrigingParameters
 from gempy_lite.core.model_data import Options, RescaledData, AdditionalData
 
-from gempy_lite.core.solution import Solution
+from gempy_lite.core.predictor.solution import Solution
 from gempy_lite.addons.gempy_to_rexfile import geomodel_to_rex
 
 

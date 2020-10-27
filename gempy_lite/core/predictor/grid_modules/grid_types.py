@@ -1,6 +1,4 @@
-from gempy_lite.core.grid_modules.create_topography import LoadDEMArtificial
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.constants import G
 from scipy import interpolate
 from gempy_lite.utils.meta import _setdoc_pro

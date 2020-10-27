@@ -15,8 +15,8 @@ from numpy import ndarray
 from typing import Union
 import warnings
 from gempy_lite.core.model import Project
-from gempy_lite.core.solution import Solution
-from gempy_lite.utils.meta import _setdoc, _setdoc_pro
+from gempy_lite.core.predictor.solution import Solution
+from gempy_lite.utils.meta import _setdoc_pro
 
 
 # region get

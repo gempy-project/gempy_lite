@@ -6,7 +6,7 @@ import pandas as pn
 
 from gempy_lite.core.kernel_data.geometric_data import SurfacePoints, Orientations, Surfaces
 from gempy_lite.core.kernel_data import Structure, KrigingParameters
-from gempy_lite.core.structured_data import Grid
+from gempy_lite.core.predictor.structured_data import Grid
 from gempy_lite.utils import docstring as ds
 from gempy_lite.utils.meta import _setdoc_pro
 

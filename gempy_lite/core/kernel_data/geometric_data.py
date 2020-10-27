@@ -217,10 +217,10 @@ class SurfacePoints(GeometricData):
             :class:`pn.DataFrame`: df where Structural data is stored
 
         """
-        len_series = np.zeros(self.surfaces.stack.n_features, dtype=int)
+        #len_series = np.zeros(self.surfaces.stack.n_features, dtype=int)
         # Array containing the size of every series. SurfacePoints.
         points_count = self.df['OrderFeature'].value_counts(sort=False)
-        len_series_i = np.zeros(len_series, dtype=int)
+        len_series_i = np.zeros(self.surfaces.stack.n_features, dtype=int)
         len_series_i[points_count.index - 1] = points_count.values
 
         return len_series_i

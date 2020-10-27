@@ -103,7 +103,7 @@ class Surfaces(object):
         # len_sps[surf_count.index - 1] = surf_count.values
         #
         # self.df.at['values', 'number surfaces per series'] = len_sps
-        return self.df.groupby('Feature').Surface.nunique().values
+        return self.df.groupby('Feature').count()['Surface'].values
 
     def update_id(self, id_list: list = None):
         """
@@ -617,7 +617,7 @@ class Colors:
         self._set_colors()
 
     def make_faults_black(self, series_fault):
-        faults_list = list(self.surfaces.df[self.surfaces.df.series.isin(series_fault)]['Surface'])
+        faults_list = list(self.surfaces.df[self.surfaces.df.Feature.isin(series_fault)]['Surface'])
         for fault in faults_list:
             if self.colordict[fault] == '#527682':
                 self.set_default_colors(fault)

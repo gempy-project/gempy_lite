@@ -8,7 +8,7 @@
 """
 from typing import Union
 
-from gempy_lite.core.grid_modules import grid_types, topography
+from gempy_lite.core.predictor.grid_modules import grid_types, topography
 from gempy_lite.utils.meta import _setdoc_pro, _setdoc
 import gempy_lite.utils.docstring as ds
 import numpy as np

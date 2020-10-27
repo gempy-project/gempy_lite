@@ -155,7 +155,7 @@ def create_surface_points(create_surfaces, create_series):
 
     print(surface_points)
 
-    surface_points.map_data_from_surfaces(surfaces, 'series')
+    surface_points.map_data_from_surfaces(surfaces, 'Feature')
     print(surface_points)
 
     surface_points.map_data_from_surfaces(surfaces, 'id')
@@ -195,7 +195,7 @@ def create_orientations(create_surfaces, create_series):
     print(orientations)
 
     # ### Mapping data from the other df
-    orientations.map_data_from_surfaces(surfaces, 'series')
+    orientations.map_data_from_surfaces(surfaces, 'Feature')
     print(orientations)
 
     orientations.map_data_from_surfaces(surfaces, 'id')

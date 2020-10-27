@@ -453,6 +453,8 @@ class Stack(Series, Faults):
                          'DriftDegree',
                          'isActive', 'isFault', 'isFinite',
                          'isComputed']
+
+        self._kriging_view = ['Range', 'Sill', 'DriftDegree']
         self._public_attr = ['OrderFeature', 'BottomRelation', 'Level',
                              'Range', 'Sill',
                              'DriftDegree',
@@ -535,11 +537,52 @@ class Stack(Series, Faults):
 
         return range_var
 
-
     @property
     def faults(self):
         return self
 
     @property
+    def kriging(self):
+        return self.df[self._kriging_view]
+
+    @property
     def n_features(self):
         return self.df.shape[0]
+
+    def modify_parameter(self, attribute: str, value, idx=None, **kwargs):
+        """Method to modify a given field
+
+         Args:
+             attribute (str): Name of the field to modify
+             value: new value of the field. It will have to exist in the category in order for pandas to modify it.
+             kwargs:
+                 * u_grade_sep (str): If drift equations values are `str`, symbol that separates the values.
+
+         Returns:
+             :class:`pandas.DataFrame`: df where options data is stored
+         """
+
+        u_grade_sep = kwargs.get('u_grade_sep', ',')
+        assert np.isin(attribute, self.df.columns).all(), 'Valid properties are: ' +\
+                                                          np.array2string(self.df.columns)
+        if idx is None:
+            idx = slice(None)
+
+        if attribute == 'drift equations':
+            value = np.asarray(value)
+            print(value)
+
+            if type(value) is str:
+                value = np.fromstring(value[1:-1], sep=u_grade_sep, dtype=int)
+            try:
+                assert value.shape[0] is self.structure.df.loc['values', 'len series surface_points'].shape[0]
+                print(value, attribute)
+                self.df.at[idx, attribute] = value
+                print(self.df)
+
+            except AssertionError:
+                print('u_grade length must be the same as the number of series')
+
+        else:
+            self.df.loc[idx, attribute] = value
+
