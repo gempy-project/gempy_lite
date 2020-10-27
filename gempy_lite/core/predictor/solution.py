@@ -1,13 +1,96 @@
 import numpy as np
-from typing import Union
+from typing import Union, Iterable
 import warnings
 # from skimage import measure
 from gempy_lite.utils.input_manipulation import find_interfaces_from_block_bottoms
 from gempy_lite.core.predictor.structured_data import Grid
 from gempy_lite.core.kernel_data import Surfaces
-from gempy_lite.core.kernel_data.stack import Series
+from gempy_lite.core.kernel_data.stack import Series, Stack
 from gempy_lite.utils.meta import _setdoc_pro
 import gempy_lite.utils.docstring as ds
+
+import xarray as xr
+
+
+@_setdoc_pro([Grid.__doc__, Surfaces.__doc__, Series.__doc__, ds.weights_vector, ds.sfai, ds.bai, ds.mai, ds.vai,
+              ds.lith_block, ds.sfm, ds.bm, ds.mm, ds.vm, ds.vertices, ds.edges, ds.geological_map])
+class XSolution(object):
+    """This class stores the output of the interpolation and the necessary objects
+    to visualize and manipulate this data.
+
+    Depending on the activated grid (see :class:`Grid`) a different number of
+     properties are returned returned:
+
+    Args:
+        grid (Grid): [s0]
+        surfaces (Surfaces): [s1]
+        series (Series): [s2]
+
+    Attributes:
+        grid (Grid)
+        surfaces (Surfaces)
+        series (Series)
+        weights_vector (numpy.array): [s3]
+        scalar_field_at_surface_points (numpy.array): [s4]
+        block_at_surface_points (numpy.array): [s5]
+        mask_at_surface_points (numpy.array): [s6]
+        values_at_surface_points (numpy.array): [s7]
+        lith_block (numpy.array): [s8]
+        scalar_field_matrix (numpy.array): [s9]
+        block_matrix (numpy.array): [s10]
+        mask_matrix (numpy.array): [s11]
+        mask_matrix_pad (numpy.array): mask matrix padded 2 block in order to guarantee that the layers intersect each
+         other after marching cubes
+        values_matrix (numpy.array): [s12]
+        vertices (list[numpy.array]): [s13]
+        edges (list[numpy.array]): [s14]
+        geological_map (numpy.array): [s15]
+
+    """
+
+    def __init__(self, grid: Grid,
+                 surfaces: Surfaces = None,
+                 stack: Stack = None,
+                 ):
+        # self.additional_data = additional_data
+        self.grid = grid
+        #  self.surface_points = surface_points
+        self.stack = stack
+        self.surfaces = surfaces  # Used to store ver/sim there
+
+        # Define xarrays
+        self.weights_vector = None
+        self.at_surface_points = None
+        self.s_regular_grid = None
+        self.meshes = None
+
+    def get_grid_args(self, grid_type: str) -> tuple:
+        return self.grid.get_grid_args(grid_type)
+
+    def set_values(self, values: Iterable):
+        self.set_values_to_regular_grid(values)
+
+    def set_values_to_regular_grid(self, values: Iterable, l0=None, l1=None):
+        if l0 is None or l1 is None:
+            l0, l1 = self.get_grid_args('regular')
+
+        coords = dict()
+
+        if self.stack is not None:
+            coords['Features'] = self.stack.df.groupby('isActive').get_group(True).index
+
+        coords['X'] = self.grid.regular_grid.x
+        coords['Y'] = self.grid.regular_grid.y
+        coords['Z'] = self.grid.regular_grid.z
+        property_matrix = xr.DataArray(
+            data=values[0][:, l0:l1].reshape(-1, *self.grid.regular_grid.resolution),
+            dims=['Features', 'X', 'Y', 'Z'],
+            coords=coords
+        )
+
+        self.s_regular_grid = xr.Dataset({
+            'property_matrix': property_matrix
+        })
 
 
 @_setdoc_pro([Grid.__doc__, Surfaces.__doc__, Series.__doc__, ds.weights_vector, ds.sfai, ds.bai, ds.mai, ds.vai,
@@ -211,7 +294,6 @@ class Solution(object):
 
         return [vertices, simplices, normals, values]
 
-
     def padding_mask_matrix(self, mask_topography=True, shift=2):
         """Pad as many elements as in shift to the masking arrays. This is done
          to guarantee intersection of layers if masked marching cubes are done
@@ -243,7 +325,7 @@ class Solution(object):
     def compute_all_surfaces(self, **kwargs):
         """Compute all surfaces of the model given the geological features rules.
 
-        Args:
+0        Args:
             **kwargs: :any:`skimage.measure.marching_cubes` args (see below)
 
         Returns:
@@ -276,7 +358,7 @@ class Solution(object):
             sfas = self.scalar_field_at_surface_points[e]
             # Drop
             sfas = sfas[np.nonzero(sfas)]
-            mask_array = self.mask_matrix_pad[e-1 if series_type[e-1] == 'Onlap' else e]
+            mask_array = self.mask_matrix_pad[e - 1 if series_type[e - 1] == 'Onlap' else e]
             for level in sfas:
                 try:
                     v, s, norm, val = self.compute_marching_cubes_regular_grid(
