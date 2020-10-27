@@ -1339,8 +1339,8 @@ class ImplicitCoKriging(object):
         """
         # Add categories from series
         if set_categories_from_series is True:
-            self._surface_points.set_series_categories_from_series(self._surfaces.series)
-            self._orientations.set_series_categories_from_series(self._surfaces.series)
+            self._surface_points.set_series_categories_from_series(self.series)
+            self._orientations.set_series_categories_from_series(self.series)
 
         # Add categories from surfaces
         if set_categories_from_surfaces is True:

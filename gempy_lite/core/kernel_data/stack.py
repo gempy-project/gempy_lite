@@ -259,7 +259,8 @@ class Series(object):
             self.reset_order_series()
         return self
 
-    def set_bottom_relation(self, series_list: Union[str, list], bottom_relation: Union[str, list]):
+    def set_bottom_relation(self, series_list: Union[str, list],
+                            bottom_relation: Union[str, list]):
         """Set the bottom relation between the series and the one below.
 
         Args:
@@ -441,16 +442,18 @@ class Stack(Series, Faults):
             rel_matrix: Iterable = None
     ):
 
+        # Dataframe views
         self._public_attr = ['OrderFeature', 'BottomRelation', 'Level',
                              'isActive', 'isFault', 'isFinite']
         self._private_attr = ['isComputed']
 
+        # Default values
         self._default_values = [1, np.nan, 0, False, False, False, False]
 
         if features_names is None:
             features_names = ['Default series']
 
-        # Set unique df
+        # Init df
         df_ = pn.DataFrame(np.array([self._default_values]),
                            index=pn.CategoricalIndex(features_names, ordered=False),
                            columns=['OrderFeature', 'BottomRelation', 'Level',
@@ -470,12 +473,15 @@ class Stack(Series, Faults):
             ['Erosion'],
             categories=['Erosion', 'Onlap', 'Fault']
         )
+
+        # Init aux df
         self.faults_relations_df = pn.DataFrame(
             index=pn.CategoricalIndex(['Default series']),
             columns=pn.CategoricalIndex(['Default series', '']),
             dtype='bool'
         )
 
+        # ----------
         self.set_is_fault(series_fault=fault_features)
         self.set_fault_relation(rel_matrix=rel_matrix)
 

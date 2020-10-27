@@ -188,31 +188,47 @@ class Surfaces(object):
 
     def __init__(self, series, surface_names=None, values_array=None, properties_names=None):
 
+        # Other data objects
+        self.series = series
+
+        # Dataframe views
         self._columns = ['surface', 'series', 'order_surfaces',
                          'isBasement', 'isFault', 'isActive', 'hasData', 'color',
                          'vertices', 'edges', 'sfai', 'id']
 
         self._columns_vis_drop = ['vertices', 'edges', 'sfai', 'isBasement', 'isFault',
                                   'isActive', 'hasData']
-        self._n_properties = len(self._columns) - 1
-        self.series = series
-        self.colors = Colors(self)
 
+        self._properites_vals = []
+        self._private_attr = [
+            'vertices', 'edges', 'sfai', 'isBasement', 'hasData', 'isFault']
+
+        # ----
+
+        # Init df
         df_ = pn.DataFrame(columns=self._columns)
         self.df = df_.astype({'surface': str, 'series': 'category',
                               'order_surfaces': int,
                               'isBasement': bool, 'isFault': bool, 'isActive': bool, 'hasData': bool,
                               'color': bool, 'id': int, 'vertices': object, 'edges': object})
 
-        if (np.array(sys.version_info[:2]) <= np.array([3, 6])).all():
-            self.df: pn.DataFrame
-
         self.df['series'].cat.add_categories(['Default series'], inplace=True)
+
+        # Set initial values
         if surface_names is not None:
             self.set_surfaces_names(surface_names)
 
         if values_array is not None:
             self.set_surfaces_values(values_array=values_array, properties_names=properties_names)
+
+        # Initialize aux objects
+        self.colors = Colors(self)
+
+    @property
+    def _public_attr(self):
+        """Properties values are arbitrary given by the user. e.g. porosity"""
+        fixed = ['surface', 'series', 'order_surfaces', 'isActive', 'color', 'id']
+        return fixed.append(self._properites_vals)
 
     def __repr__(self):
         c_ = self.df.columns[~(self.df.columns.isin(self._columns_vis_drop))]
@@ -443,16 +459,16 @@ class Surfaces(object):
     # set_series
     def map_series(self, mapping_object: Union[dict, pn.DataFrame] = None):
         """
-        Method to map to which series every surface belongs to. This step is necessary to assign differenct tectonics
-        such as unconformities or faults.
-
+        Method to map to which series every surface belongs to. This step is
+         necessary to assign differenct tectonics such as unconformities or faults.
 
         Args:
             mapping_object (dict, :class:`pn.DataFrame`):
-                * dict: keys are the series and values the surfaces belonging to that series
+                * dict: keys are the series and values the surfaces belonging to
+                 that series
 
-                * pn.DataFrame: Dataframe with surfaces as index and a column series with the correspondent series name
-                  of each surface
+                * pn.DataFrame: Dataframe with surfaces as index and a column
+                series with the correspondent series name of each surface
 
         Returns:
              :class:`Surfaces`
@@ -463,7 +479,8 @@ class Surfaces(object):
         self.df['series'].cat.set_categories(self.series.df.index, inplace=True)
         # TODO Fixing this. It is overriding the formations already mapped
         if mapping_object is not None:
-            # If none is passed and series exist we will take the name of the first series as a default
+            # If none is passed and series exist we will take the name of the
+            # first series as a default
 
             if type(mapping_object) is dict:
 

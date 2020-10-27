@@ -273,6 +273,8 @@ def test_stack(save=True):
     stack.set_is_fault(['boo'])
     faults = stack
     faults.set_is_fault(['boo'])
+    stack.set_is_finite_fault(['boo'])
+    stack.set_bottom_relation(['foo7', 'foo5'], ['Onlap', 'Fault'])
 
     fr = np.zeros((4, 4))
     fr[2, 2] = True
