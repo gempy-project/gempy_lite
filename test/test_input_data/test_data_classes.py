@@ -43,7 +43,8 @@ def create_series(create_faults):
     return series
 
 
-def test_surfaces(create_series):
+@pytest.fixture(scope='module')
+def create_surfaces(create_series):
     series = create_series
     surfaces = gempy_lite.core.kernel_data.Surfaces(series)
     surfaces.set_surfaces_names(['foo', 'foo2', 'foo5'])
@@ -57,7 +58,7 @@ def test_surfaces(create_series):
     # The column surface is also a pandas.Categories.
     # This will be important for the Data clases (SurfacePoints and Orientations)
 
-    print(surfaces.df['surface'])
+    print(surfaces.df['Surface'])
 
     ### Set values
 
@@ -93,9 +94,9 @@ def test_surfaces(create_series):
     # are pandas categories. To get a overview of what this mean
     # check https://pandas.pydata.org/pandas-docs/stable/categorical.html.
 
-    print(surfaces.df['feature'])
+    print(surfaces.df['Feature'])
 
-    print(surfaces.df['surface'])
+    print(surfaces.df['Surface'])
 
     # ### Map series to surface
 
@@ -104,14 +105,14 @@ def test_surfaces(create_series):
 
     d = {"foo7": 'foo', "booX": ('foo2', 'foo5', 'fee')}
 
-    surfaces.map_series(d)
-    surfaces.map_series({"foo7": 'foo', "boo": ('foo2', 'foo5', 'fee')})
+    surfaces.map_stack(d)
+    surfaces.map_stack({"foo7": 'foo', "boo": ('foo2', 'foo5', 'fee')})
 
     print(surfaces)
 
     # An advantage of categories is that they are order so no we can tidy the df by series and surface
 
-    surfaces.df.sort_values(by='feature', inplace=True)
+    surfaces.df.sort_values(by='Feature', inplace=True)
 
     # If we change the basement:
 
@@ -131,8 +132,8 @@ def test_surfaces(create_series):
 
     print(surfaces)
 
-    print(surfaces.number_surfaces_per_feature)
-    np.testing.assert_array_almost_equal(surfaces.number_surfaces_per_feature,
+    print(surfaces.n_surfaces_per_feature)
+    np.testing.assert_array_almost_equal(surfaces.n_surfaces_per_feature,
                                          np.array([0, 2, 1, 0, 1], dtype=int))
     # We can use `set_is_fault` to choose which of our series are faults:
     return surfaces

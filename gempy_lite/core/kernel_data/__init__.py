@@ -8,164 +8,7 @@ import pandas as pn
 import seaborn as sns
 
 from gempy_lite.utils.meta import _setdoc_pro
-
-
-class Colors:
-    """
-    Object that handles the color management in the model.
-    """
-    def __init__(self, surfaces):
-        self.surfaces = surfaces
-        self.colordict = None
-        self._hexcolors_soft = [
-            '#015482', '#9f0052', '#ffbe00', '#728f02', '#443988',
-            '#ff3f20', '#5DA629', '#b271d0', '#72e54a', '#583bd1',
-            '#d0e63d', '#b949e2', '#95ce4b', '#6d2b9f', '#60eb91',
-            '#d746be', '#52a22e', '#5e63d8', '#e5c339', '#371970',
-            '#d3dc76', '#4d478e', '#43b665', '#d14897', '#59e5b8',
-            '#e5421d', '#62dedb', '#df344e', '#9ce4a9', '#d94077',
-            '#99c573', '#842f74', '#578131', '#708de7', '#df872f',
-            '#5a73b1', '#ab912b', '#321f4d', '#e4bd7c', '#142932',
-            '#cd4f30', '#69aedd', '#892a23', '#aad6de', '#5c1a34',
-            '#cfddb4', '#381d29', '#5da37c', '#d8676e', '#52a2a3',
-            '#9b405c', '#346542', '#de91c9', '#555719', '#bbaed6',
-            '#945624', '#517c91', '#de8a68', '#3c4b64', '#9d8a4d',
-            '#825f7e', '#2c3821', '#ddadaa', '#5e3524', '#a3a68e',
-            '#a2706b', '#686d56'
-        ]  # source: https://medialab.github.io/iwanthue/
-
-    def generate_colordict(
-            self,
-            hex_colors: Union[List[str], str] = 'palettes',
-            palettes: List[str] = 'default',
-    ):
-        """Generates and sets color dictionary.
-
-        Args:
-           hex_colors (list[str], str): List of hex color values. In the future this could
-           accommodate the actual geological palettes. For example striplog has a quite
-           good set of palettes.
-                * palettes: If hexcolors='palettes' the colors will be chosen from the
-                   palettes arg
-                * soft: https://medialab.github.io/iwanthue/
-           palettes (list[str], optional): list with name of seaborn palettes. Defaults to 'default'.
-        """
-        if hex_colors == 'palettes':
-            hex_colors = []
-            if palettes == 'default':
-                # we predefine some 7 colors manually
-                hex_colors = ['#015482', '#9f0052', '#ffbe00', '#728f02', '#443988', '#ff3f20', '#5DA629']
-                # then we create a list of seaborn color palette names, as the user didn't provide any
-                palettes = ['muted', 'pastel', 'deep', 'bright', 'dark', 'colorblind']
-            for palette in palettes:  # for each palette
-                hex_colors += sns.color_palette(palette).as_hex()  # get all colors in palette and add to list
-                if len(hex_colors) >= len(self.surfaces.df):
-                    break
-        elif hex_colors == 'soft':
-            hex_colors = self._hexcolors_soft
-
-        surface_names = self.surfaces.df['surface'].values
-        n_surfaces = len(surface_names)
-
-        while n_surfaces > len(hex_colors):
-            hex_colors.append(self._random_hexcolor())
-
-        self.colordict = dict(
-            zip(surface_names, hex_colors[:n_surfaces])
-        )
-
-    @staticmethod
-    def _random_hexcolor() -> str:
-        """Generates a random hex color string."""
-        return "#"+str(hex(np.random.randint(0, 16777215))).lstrip("0x")
-
-    def change_colors(self, colordict: dict = None):
-        """Change the model colors either by providing a color dictionary or,
-        if not, by using a color pick widget.
-
-        Args:
-            colordict (dict, optional): dict with surface names mapped to hex color codes, e.g. {'layer1':'#6b0318'}
-            if None: opens jupyter widget to change colors interactively. Defaults to None.
-        """
-        try:
-            from gempy_lite.core.kernel_data import ipywidgets_import
-            from IPython.display import display
-            import ipywidgets as widgets
-
-        except ImportError:
-            raise ImportError('You need to install IPython and for interactive color picking.')
-
-        assert ipywidgets_import, 'ipywidgets not imported. Make sure the library is installed.'
-
-        if colordict:
-            self.update_colors(colordict)
-        else:
-
-            items = [
-                widgets.ColorPicker(description=surface, value=color)
-                for surface, color in self.colordict.items()
-            ]
-            colbox = widgets.VBox(items)
-            print('Click to select new colors.')
-            display(colbox)
-
-            def on_change(v):
-                self.colordict[v['owner'].description] = v['new']  # update colordict
-                self._set_colors()
-
-            for cols in colbox.children:
-                cols.observe(on_change, 'value')
-
-    def update_colors(self, colordict: dict = None):
-        """ Updates the colors in self.colordict and in surfaces_df.
-
-        Args:
-            colordict (dict, optional): dict with surface names mapped to hex
-                color codes, e.g. {'layer1':'#6b0318'}. Defaults to None.
-        """
-        if colordict is None:
-            self.generate_colordict()
-        else:
-            for surf, color in colordict.items():  # map new colors to surfaces
-                # assert this because user can set it manually
-                assert surf in list(self.surfaces.df['surface']), str(surf) + ' is not a model surface'
-                assert re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color), str(color) + ' is not a HEX color code'
-                self.colordict[surf] = color
-
-        self._set_colors()
-
-    def _add_colors(self):
-        """Assign a color to the last entry of surfaces df or check isnull and assign color there"""
-        self.generate_colordict()
-
-    def _set_colors(self):
-        """sets colordict in surfaces dataframe"""
-        for surf, color in self.colordict.items():
-            self.surfaces.df.loc[self.surfaces.df['surface'] == surf, 'color'] = color
-
-    def set_default_colors(self, surfaces=None):
-        if surfaces is not None:
-            self.colordict[surfaces] = self.colordict[surfaces]
-        self._set_colors()
-
-    def delete_colors(self, surfaces):
-        for surface in surfaces:
-            self.colordict.pop(surface, None)
-        self._set_colors()
-
-    def make_faults_black(self, series_fault):
-        faults_list = list(self.surfaces.df[self.surfaces.df.series.isin(series_fault)]['surface'])
-        for fault in faults_list:
-            if self.colordict[fault] == '#527682':
-                self.set_default_colors(fault)
-            else:
-                self.colordict[fault] = '#527682'
-                self._set_colors()
-
-    def reset_default_colors(self):
-        self.generate_colordict()
-        self._set_colors()
-        return self.surfaces
+from .stack import Stack
 
 
 class Surfaces(object):
@@ -199,7 +42,7 @@ class Surfaces(object):
         self.stack = series
 
         # Dataframe views
-        self._columns = ['surface', 'feature', 'order_surfaces',
+        self._columns = ['Surface', 'Feature', 'OrderSurface',
                          'isBasement', 'isFault', 'isActive', 'hasData', 'color',
                          'vertices', 'edges', 'sfai', 'id']
 
@@ -211,12 +54,12 @@ class Surfaces(object):
 
         # Init df
         df_ = pn.DataFrame(columns=self._columns)
-        self.df = df_.astype({'surface': str, 'feature': 'category',
-                              'order_surfaces': int,
+        self.df = df_.astype({'Surface': str, 'Feature': 'category',
+                              'OrderSurface': int,
                               'isBasement': bool, 'isFault': bool, 'isActive': bool, 'hasData': bool,
                               'color': bool, 'id': int, 'vertices': object, 'edges': object})
 
-        self.df['feature'].cat.add_categories(['Default series'], inplace=True)
+        self.df['Feature'].cat.add_categories(['Default series'], inplace=True)
 
         # Set initial values
         if surface_names is not None:
@@ -232,7 +75,7 @@ class Surfaces(object):
     @property
     def _public_attr(self):
         """Properties values are arbitrary given by the user. e.g. porosity"""
-        fixed = ['surface', 'feature', 'order_surfaces', 'isActive', 'color', 'id', *self._properites_vals]
+        fixed = ['Surface', 'Feature', 'OrderSurface', 'isActive', 'color', 'id', *self._properites_vals]
         return fixed
 
     @property
@@ -241,11 +84,11 @@ class Surfaces(object):
         return self.stack
 
     @property
-    def number_surfaces(self):
-        return self.df['surface'].nunique()
+    def n_surfaces(self):
+        return self.df['Surface'].nunique()
 
     @property
-    def number_surfaces_per_feature(self):
+    def n_surfaces_per_feature(self):
         """
         Set number of surfaces for each series
 
@@ -260,7 +103,7 @@ class Surfaces(object):
         # len_sps[surf_count.index - 1] = surf_count.values
         #
         # self.df.at['values', 'number surfaces per series'] = len_sps
-        return self.df.groupby('feature').surface.nunique().values
+        return self.df.groupby('Feature').Surface.nunique().values
 
     def update_id(self, id_list: list = None):
         """
@@ -282,7 +125,7 @@ class Surfaces(object):
         return self
 
     def map_faults(self):
-        self.df['isFault'] = self.df['feature'].map(self.stack.faults.df['isFault'])
+        self.df['isFault'] = self.df['Feature'].map(self.stack.faults.df['isFault'])
 
     @staticmethod
     def background_color(value):
@@ -310,11 +153,11 @@ class Surfaces(object):
         # Deleting all columns if they exist
         # TODO check if some of the names are in the df and not deleting them?
         self.df.drop(self.df.index, inplace=True)
-        self.df['surface'] = surfaces_list
+        self.df['Surface'] = surfaces_list
 
         # Changing the name of the series is the only way to mutate the series object from surfaces
         if update_df is True:
-            self.map_series()
+            self.map_stack()
             self.update_id()
             self.set_basement()
             self.reset_order_surfaces()
@@ -346,7 +189,7 @@ class Surfaces(object):
         Returns:
 
         """
-        self.set_surfaces_names(surface_points.df['surface'].unique())
+        self.set_surfaces_names(surface_points.df['Surface'].unique())
         return self
 
     def add_surface(self, surface_list: Union[str, list], update_df=True):
@@ -363,16 +206,16 @@ class Surfaces(object):
         surface_list = np.atleast_1d(surface_list)
 
         # Remove from the list categories that already exist
-        surface_list = surface_list[~np.in1d(surface_list, self.df['surface'].values)]
+        surface_list = surface_list[~np.in1d(surface_list, self.df['Surface'].values)]
 
         for c in surface_list:
             idx = self.df.index.max()
             if idx is np.nan:
                 idx = -1
-            self.df.loc[idx + 1, 'surface'] = c
+            self.df.loc[idx + 1, 'Surface'] = c
 
         if update_df is True:
-            self.map_series()
+            self.map_stack()
             self.update_id()
             self.set_basement()
             self.reset_order_surfaces()
@@ -395,7 +238,7 @@ class Surfaces(object):
         if indices.dtype == int:
             self.df.drop(indices, inplace=True)
         else:
-            self.df.drop(self.df.index[self.df['surface'].isin(indices)], inplace=True)
+            self.df.drop(self.df.index[self.df['Surface'].isin(indices)], inplace=True)
 
         if update_id is True:
             self.update_id()
@@ -418,14 +261,14 @@ class Surfaces(object):
             :any:`pandas.Series.replace`
 
         """
-        if np.isin(to_replace, self.df['surface']).any():
+        if np.isin(to_replace, self.df['Surface']).any():
             print('Two surfaces cannot have the same name.')
         else:
-            self.df['surface'].replace(to_replace, inplace=True, **kwargs)
+            self.df['Surface'].replace(to_replace, inplace=True, **kwargs)
         return self
 
     def reset_order_surfaces(self):
-        self.df['order_surfaces'] = self.df.groupby('feature').cumcount() + 1
+        self.df['OrderSurface'] = self.df.groupby('Feature').cumcount() + 1
 
     def modify_order_surfaces(self, new_value: int, idx: int, series_name: str = None):
         """
@@ -441,12 +284,12 @@ class Surfaces(object):
 
         """
         if series_name is None:
-            series_name = self.df.loc[idx, 'feature']
+            series_name = self.df.loc[idx, 'Feature']
 
-        group = self.df.groupby('feature').get_group(series_name)['order_surfaces']
+        group = self.df.groupby('Feature').get_group(series_name)['OrderSurface']
         assert np.isin(new_value, group), 'new_value must exist already in the order_surfaces group.'
         old_value = group[idx]
-        self.df.loc[group.index, 'order_surfaces'] = group.replace([new_value, old_value], [old_value, new_value])
+        self.df.loc[group.index, 'OrderSurface'] = group.replace([new_value, old_value], [old_value, new_value])
         self.sort_surfaces()
         self.set_basement()
         return self
@@ -454,7 +297,7 @@ class Surfaces(object):
     def sort_surfaces(self):
         """Sort surfaces by series and order_surfaces"""
 
-        self.df.sort_values(by=['feature', 'order_surfaces'], inplace=True)
+        self.df.sort_values(by=['Feature', 'OrderSurface'], inplace=True)
         self.update_id()
         return self.df
 
@@ -480,7 +323,7 @@ class Surfaces(object):
     # endregion
 
     # set_series
-    def map_series(self, mapping_object: Union[dict, pn.DataFrame] = None):
+    def map_stack(self, mapping_object: Union[dict, pn.DataFrame] = None):
         """
         Method to map to which series every surface belongs to. This step is
          necessary to assign differenct tectonics such as unconformities or faults.
@@ -498,8 +341,8 @@ class Surfaces(object):
 
         """
 
-        # Updating surfaces['feature'] categories
-        self.df['feature'].cat.set_categories(self.stack.df.index, inplace=True)
+        # Updating surfaces['Feature'] categories
+        self.df['Feature'].cat.set_categories(self.stack.df.index, inplace=True)
         # TODO Fixing this. It is overriding the formations already mapped
         if mapping_object is not None:
             # If none is passed and series exist we will take the name of the
@@ -515,10 +358,10 @@ class Surfaces(object):
                         f.append(form)
 
                 new_series_mapping = pn.DataFrame([pn.Categorical(s, self.stack.df.index)],
-                                                  f, columns=['feature'])
+                                                  f, columns=['Feature'])
 
             elif isinstance(mapping_object, pn.Categorical):
-                # This condition is for the case we have surface on the index and in 'feature' the category
+                # This condition is for the case we have surface on the index and in 'Feature' the category
                 # TODO Test this
                 new_series_mapping = mapping_object
 
@@ -526,14 +369,14 @@ class Surfaces(object):
                 raise AttributeError(str(type(mapping_object)) + ' is not the right attribute type.')
 
             # Checking which surfaces are on the list to be mapped
-            b = self.df['surface'].isin(new_series_mapping.index)
+            b = self.df['Surface'].isin(new_series_mapping.index)
             idx = self.df.index[b]
 
             # Mapping
-            self.df.loc[idx, 'feature'] = self.df.loc[idx, 'surface'].map(new_series_mapping['feature'])
+            self.df.loc[idx, 'Feature'] = self.df.loc[idx, 'Surface'].map(new_series_mapping['Feature'])
 
         # Fill nans
-        self.df['feature'].fillna(self.stack.df.index.values[-1], inplace=True)
+        self.df['Feature'].fillna(self.stack.df.index.values[-1], inplace=True)
 
         # Reorganize the pile
         self.reset_order_surfaces()
@@ -623,11 +466,169 @@ class Surfaces(object):
 
         """
         properties_names = np.atleast_1d(properties_names)
-        assert ~np.isin(properties_names, ['surface', 'feature', 'order_surfaces', 'id', 'isBasement', 'color']), \
+        assert ~np.isin(properties_names, ['Surface', 'Feature', 'OrderSurface', 'id', 'isBasement', 'color']), \
             'only property names can be modified with this method'
 
         self.df.loc[idx, properties_names] = values
         return self
+
+
+class Colors:
+    """
+    Object that handles the color management in the model.
+    """
+    def __init__(self, surfaces):
+        self.surfaces = surfaces
+        self.colordict = None
+        self._hexcolors_soft = [
+            '#015482', '#9f0052', '#ffbe00', '#728f02', '#443988',
+            '#ff3f20', '#5DA629', '#b271d0', '#72e54a', '#583bd1',
+            '#d0e63d', '#b949e2', '#95ce4b', '#6d2b9f', '#60eb91',
+            '#d746be', '#52a22e', '#5e63d8', '#e5c339', '#371970',
+            '#d3dc76', '#4d478e', '#43b665', '#d14897', '#59e5b8',
+            '#e5421d', '#62dedb', '#df344e', '#9ce4a9', '#d94077',
+            '#99c573', '#842f74', '#578131', '#708de7', '#df872f',
+            '#5a73b1', '#ab912b', '#321f4d', '#e4bd7c', '#142932',
+            '#cd4f30', '#69aedd', '#892a23', '#aad6de', '#5c1a34',
+            '#cfddb4', '#381d29', '#5da37c', '#d8676e', '#52a2a3',
+            '#9b405c', '#346542', '#de91c9', '#555719', '#bbaed6',
+            '#945624', '#517c91', '#de8a68', '#3c4b64', '#9d8a4d',
+            '#825f7e', '#2c3821', '#ddadaa', '#5e3524', '#a3a68e',
+            '#a2706b', '#686d56'
+        ]  # source: https://medialab.github.io/iwanthue/
+
+    def generate_colordict(
+            self,
+            hex_colors: Union[List[str], str] = 'palettes',
+            palettes: List[str] = 'default',
+    ):
+        """Generates and sets color dictionary.
+
+        Args:
+           hex_colors (list[str], str): List of hex color values. In the future this could
+           accommodate the actual geological palettes. For example striplog has a quite
+           good set of palettes.
+                * palettes: If hexcolors='palettes' the colors will be chosen from the
+                   palettes arg
+                * soft: https://medialab.github.io/iwanthue/
+           palettes (list[str], optional): list with name of seaborn palettes. Defaults to 'default'.
+        """
+        if hex_colors == 'palettes':
+            hex_colors = []
+            if palettes == 'default':
+                # we predefine some 7 colors manually
+                hex_colors = ['#015482', '#9f0052', '#ffbe00', '#728f02', '#443988', '#ff3f20', '#5DA629']
+                # then we create a list of seaborn color palette names, as the user didn't provide any
+                palettes = ['muted', 'pastel', 'deep', 'bright', 'dark', 'colorblind']
+            for palette in palettes:  # for each palette
+                hex_colors += sns.color_palette(palette).as_hex()  # get all colors in palette and add to list
+                if len(hex_colors) >= len(self.surfaces.df):
+                    break
+        elif hex_colors == 'soft':
+            hex_colors = self._hexcolors_soft
+
+        surface_names = self.surfaces.df['Surface'].values
+        n_surfaces = len(surface_names)
+
+        while n_surfaces > len(hex_colors):
+            hex_colors.append(self._random_hexcolor())
+
+        self.colordict = dict(
+            zip(surface_names, hex_colors[:n_surfaces])
+        )
+
+    @staticmethod
+    def _random_hexcolor() -> str:
+        """Generates a random hex color string."""
+        return "#"+str(hex(np.random.randint(0, 16777215))).lstrip("0x")
+
+    def change_colors(self, colordict: dict = None):
+        """Change the model colors either by providing a color dictionary or,
+        if not, by using a color pick widget.
+
+        Args:
+            colordict (dict, optional): dict with surface names mapped to hex color codes, e.g. {'layer1':'#6b0318'}
+            if None: opens jupyter widget to change colors interactively. Defaults to None.
+        """
+        try:
+            from gempy_lite.core.kernel_data import ipywidgets_import
+            from IPython.display import display
+            import ipywidgets as widgets
+
+        except ImportError:
+            raise ImportError('You need to install IPython and for interactive color picking.')
+
+        assert ipywidgets_import, 'ipywidgets not imported. Make sure the library is installed.'
+
+        if colordict:
+            self.update_colors(colordict)
+        else:
+
+            items = [
+                widgets.ColorPicker(description=surface, value=color)
+                for surface, color in self.colordict.items()
+            ]
+            colbox = widgets.VBox(items)
+            print('Click to select new colors.')
+            display(colbox)
+
+            def on_change(v):
+                self.colordict[v['owner'].description] = v['new']  # update colordict
+                self._set_colors()
+
+            for cols in colbox.children:
+                cols.observe(on_change, 'value')
+
+    def update_colors(self, colordict: dict = None):
+        """ Updates the colors in self.colordict and in surfaces_df.
+
+        Args:
+            colordict (dict, optional): dict with surface names mapped to hex
+                color codes, e.g. {'layer1':'#6b0318'}. Defaults to None.
+        """
+        if colordict is None:
+            self.generate_colordict()
+        else:
+            for surf, color in colordict.items():  # map new colors to surfaces
+                # assert this because user can set it manually
+                assert surf in list(self.surfaces.df['surface']), str(surf) + ' is not a model surface'
+                assert re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', color), str(color) + ' is not a HEX color code'
+                self.colordict[surf] = color
+
+        self._set_colors()
+
+    def _add_colors(self):
+        """Assign a color to the last entry of surfaces df or check isnull and assign color there"""
+        self.generate_colordict()
+
+    def _set_colors(self):
+        """sets colordict in surfaces dataframe"""
+        for surf, color in self.colordict.items():
+            self.surfaces.df.loc[self.surfaces.df['Surface'] == surf, 'color'] = color
+
+    def set_default_colors(self, surfaces=None):
+        if surfaces is not None:
+            self.colordict[surfaces] = self.colordict[surfaces]
+        self._set_colors()
+
+    def delete_colors(self, surfaces):
+        for surface in surfaces:
+            self.colordict.pop(surface, None)
+        self._set_colors()
+
+    def make_faults_black(self, series_fault):
+        faults_list = list(self.surfaces.df[self.surfaces.df.series.isin(series_fault)]['Surface'])
+        for fault in faults_list:
+            if self.colordict[fault] == '#527682':
+                self.set_default_colors(fault)
+            else:
+                self.colordict[fault] = '#527682'
+                self._set_colors()
+
+    def reset_default_colors(self):
+        self.generate_colordict()
+        self._set_colors()
+        return self.surfaces
 
 
 class Structure(object):
@@ -670,145 +671,145 @@ class Structure(object):
 
         self.df = df_.astype({'isLith': bool, 'isFault': bool, 'number faults': int,
                               'number surfaces': int, 'number series': int})
-
-        self.update_structure_from_input()
-
-    def __repr__(self):
-        return self.df.T.to_string()
-
-    def _repr_html_(self):
-        return self.df.T.to_html()
-
-    def update_structure_from_input(self):
-        """
-        Update all fields dependent on the linked Data objects.
-
-        Returns:
-            bool: True
-        """
-        self.set_length_surfaces_i()
-        self.set_series_and_length_series_i()
-        self.set_length_series_o()
-        self.set_number_of_surfaces_per_series()
-        self.set_number_of_faults()
-        self.set_number_of_surfaces()
-        self.set_is_lith_is_fault()
-        return True
-
-    def set_length_surfaces_i(self):
-        """
-        Set the length of each **surface** on `SurfacePoints` i.e. how many data points are for each surface
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-
-        """
-        # ==================
-        # Extracting lengths
-        # ==================
-        # Array containing the size of every surface. SurfacePoints
-        lssp = self.surface_points.df.groupby('id')['OrderFeature'].count().values
-        lssp_nonzero = lssp[np.nonzero(lssp)]
-
-        self.df.at['values', 'len surfaces surface_points'] = lssp_nonzero
-
-        return self.df
-
-    def set_series_and_length_series_i(self):
-        """
-        Set the length of each **series** on `SurfacePoints` i.e. how many data points are for each series. Also
-        sets the number of series itself.
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-
-        """
-        len_series = self.surfaces.stack.df.shape[0]
-
-        # Array containing the size of every series. SurfacePoints.
-        points_count = self.surface_points.df['OrderFeature'].value_counts(sort=False)
-        len_series_i = np.zeros(len_series, dtype=int)
-        len_series_i[points_count.index - 1] = points_count.values
-
-        if len_series_i.shape[0] == 0:
-            len_series_i = np.insert(len_series_i, 0, 0)
-
-        self.df.at['values', 'len series surface_points'] = len_series_i
-        self.df['number series'] = len(len_series_i)
-        return self.df
-
-    def set_length_series_o(self):
-        """
-        Set the length of each **series** on `Orientations` i.e. how many orientations are for each series.
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-
-        """
-        # Array containing the size of every series. orientations.
-
-        len_series_o = np.zeros(self.surfaces.stack.df.shape[0], dtype=int)
-        ori_count = self.orientations.df['OrderFeature'].value_counts(sort=False)
-        len_series_o[ori_count.index - 1] = ori_count.values
-
-        self.df.at['values', 'len series orientations'] = len_series_o
-
-        return self.df
-
-    def set_number_of_surfaces_per_series(self):
-        """
-        Set number of surfaces for each series
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-
-        """
-        len_sps = np.zeros(self.surfaces.stack.df.shape[0], dtype=int)
-        surf_count = self.surface_points.df.groupby('OrderFeature'). \
-            surface.nunique()
-
-        len_sps[surf_count.index - 1] = surf_count.values
-
-        self.df.at['values', 'number surfaces per series'] = len_sps
-        return self.df
-
-    def set_number_of_faults(self):
-        """
-        Set number of faults series. This method in gempy_lite v2 is simply informative
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-
-        """
-        # Number of faults existing in the surface_points df
-        self.df.at['values', 'number faults'] = self.faults.df['isFault'].sum()
-        return self.df
-
-    def set_number_of_surfaces(self):
-        """
-        Set the number of total surfaces
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-
-        """
-        # Number of surfaces existing in the surface_points df
-        self.df.at['values', 'number surfaces'] = self.surface_points.df['surface'].nunique()
-
-        return self.df
-
-    def set_is_lith_is_fault(self):
-        """
-        Check if there is lithologies in the data and/or df. This method in gempy_lite v2 is simply informative
-
-        Returns:
-            :class:`pn.DataFrame`: df where Structural data is stored
-        """
-        self.df['isLith'] = True if self.df.loc['values', 'number series'] >= self.df.loc['values', 'number faults'] \
-            else False
-        self.df['isFault'] = True if self.df.loc['values', 'number faults'] > 0 else False
-
-        return self.df
+    #
+    #     self.update_structure_from_input()
+    #
+    # def __repr__(self):
+    #     return self.df.T.to_string()
+    #
+    # def _repr_html_(self):
+    #     return self.df.T.to_html()
+    #
+    # def update_structure_from_input(self):
+    #     """
+    #     Update all fields dependent on the linked Data objects.
+    #
+    #     Returns:
+    #         bool: True
+    #     """
+    #     self.set_length_surfaces_i()
+    #     self.set_series_and_length_series_i()
+    #     self.set_length_series_o()
+    #     self.set_number_of_surfaces_per_series()
+    #     self.set_number_of_faults()
+    #     self.set_number_of_surfaces()
+    #     self.set_is_lith_is_fault()
+    #     return True
+    #
+    # def set_length_surfaces_i(self):
+    #     """
+    #     Set the length of each **surface** on `SurfacePoints` i.e. how many data points are for each surface
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #
+    #     """
+    #     # ==================
+    #     # Extracting lengths
+    #     # ==================
+    #     # Array containing the size of every surface. SurfacePoints
+    #     lssp = self.surface_points.df.groupby('id')['OrderFeature'].count().values
+    #     lssp_nonzero = lssp[np.nonzero(lssp)]
+    #
+    #     self.df.at['values', 'len surfaces surface_points'] = lssp_nonzero
+    #
+    #     return self.df
+    #
+    # def set_series_and_length_series_i(self):
+    #     """
+    #     Set the length of each **series** on `SurfacePoints` i.e. how many data points are for each series. Also
+    #     sets the number of series itself.
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #
+    #     """
+    #     len_series = self.surfaces.stack.df.shape[0]
+    #
+    #     # Array containing the size of every series. SurfacePoints.
+    #     points_count = self.surface_points.df['OrderFeature'].value_counts(sort=False)
+    #     len_series_i = np.zeros(len_series, dtype=int)
+    #     len_series_i[points_count.index - 1] = points_count.values
+    #
+    #     if len_series_i.shape[0] == 0:
+    #         len_series_i = np.insert(len_series_i, 0, 0)
+    #
+    #     self.df.at['values', 'len series surface_points'] = len_series_i
+    #     self.df['number series'] = len(len_series_i)
+    #     return self.df
+    #
+    # def set_length_series_o(self):
+    #     """
+    #     Set the length of each **series** on `Orientations` i.e. how many orientations are for each series.
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #
+    #     """
+    #     # Array containing the size of every series. orientations.
+    #
+    #     len_series_o = np.zeros(self.surfaces.stack.df.shape[0], dtype=int)
+    #     ori_count = self.orientations.df['OrderFeature'].value_counts(sort=False)
+    #     len_series_o[ori_count.index - 1] = ori_count.values
+    #
+    #     self.df.at['values', 'len series orientations'] = len_series_o
+    #
+    #     return self.df
+    #
+    # def set_number_of_surfaces_per_series(self):
+    #     """
+    #     Set number of surfaces for each series
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #
+    #     """
+    #     len_sps = np.zeros(self.surfaces.stack.df.shape[0], dtype=int)
+    #     surf_count = self.surface_points.df.groupby('OrderFeature'). \
+    #         surface.nunique()
+    #
+    #     len_sps[surf_count.index - 1] = surf_count.values
+    #
+    #     self.df.at['values', 'number surfaces per series'] = len_sps
+    #     return self.df
+    #
+    # def set_number_of_faults(self):
+    #     """
+    #     Set number of faults series. This method in gempy_lite v2 is simply informative
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #
+    #     """
+    #     # Number of faults existing in the surface_points df
+    #     self.df.at['values', 'number faults'] = self.faults.df['isFault'].sum()
+    #     return self.df
+    #
+    # def set_number_of_surfaces(self):
+    #     """
+    #     Set the number of total surfaces
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #
+    #     """
+    #     # Number of surfaces existing in the surface_points df
+    #     self.df.at['values', 'number surfaces'] = self.surface_points.df['Surface'].nunique()
+    #
+    #     return self.df
+    #
+    # def set_is_lith_is_fault(self):
+    #     """
+    #     Check if there is lithologies in the data and/or df. This method in gempy_lite v2 is simply informative
+    #
+    #     Returns:
+    #         :class:`pn.DataFrame`: df where Structural data is stored
+    #     """
+    #     self.df['isLith'] = True if self.df.loc['values', 'number series'] >= self.df.loc['values', 'number faults'] \
+    #         else False
+    #     self.df['isFault'] = True if self.df.loc['values', 'number faults'] > 0 else False
+    #
+    #     return self.df
 
 
 @_setdoc_pro([Structure.__doc__])

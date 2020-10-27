@@ -1,3 +1,4 @@
+import warnings
 from typing import Union
 
 import numpy as np
@@ -479,7 +480,9 @@ class AdditionalData(object):
         """
         Update fields dependent on input data sucha as structure and universal kriging grade
         """
-        self.structure_data.update_structure_from_input()
-        if len(self.kriging_data.df.loc['values', 'drift equations']) < \
-                self.structure_data.df.loc['values', 'number series']:
-            self.kriging_data.set_u_grade()
+        warnings.warn('structured is not used anymore', DeprecationWarning)
+        pass
+        # self.structure_data.update_structure_from_input()
+        # if len(self.kriging_data.df.loc['values', 'drift equations']) < \
+        #         self.structure_data.df.loc['values', 'number series']:
+        #     self.kriging_data.set_u_grade()

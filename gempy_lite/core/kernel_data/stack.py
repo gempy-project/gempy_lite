@@ -1,3 +1,4 @@
+import warnings
 from typing import Union, Iterable
 
 import numpy as np
@@ -220,7 +221,7 @@ class Series(object):
         self.df.at[:, 'OrderFeature'] = pn.RangeIndex(1, self.df.shape[0] + 1)
 
     @property
-    def number_features(self):
+    def n_features(self):
         return self.df.shape[0]
 
     @_setdoc_pro(reset_order_series.__doc__)
@@ -447,12 +448,19 @@ class Stack(Series, Faults):
     ):
 
         # Dataframe views
+        self._columns = ['OrderFeature', 'BottomRelation', 'Level',
+                         'Range', 'Sill',
+                         'DriftDegree',
+                         'isActive', 'isFault', 'isFinite',
+                         'isComputed']
         self._public_attr = ['OrderFeature', 'BottomRelation', 'Level',
+                             'Range', 'Sill',
+                             'DriftDegree',
                              'isActive', 'isFault', 'isFinite']
         self._private_attr = ['isComputed']
 
         # Default values
-        self._default_values = [1, np.nan, 0, False, False, False, False]
+        self._default_values = [1, np.nan, 0, 5, 1, 1, False, False, False, False]
 
         if features_names is None:
             features_names = ['Default series']
@@ -460,8 +468,7 @@ class Stack(Series, Faults):
         # Init df
         df_ = pn.DataFrame(np.array([self._default_values]),
                            index=pn.CategoricalIndex(features_names, ordered=False),
-                           columns=['OrderFeature', 'BottomRelation', 'Level',
-                                    'isActive', 'isFault', 'isFinite', 'isComputed'])
+                           columns=self._columns)
 
         # Setting attribute types:
         self.df = df_.astype({'OrderFeature': int,
@@ -470,6 +477,9 @@ class Stack(Series, Faults):
                               'isActive': bool,
                               'isFault': bool,
                               'isFinite': bool,
+                              'Range': float,
+                              'Sill': float,
+                              'DriftDegree': int,
                               'isComputed': bool})
 
         #self.df['OrderFeature'] = self.df['OrderFeature'].astype(int)
@@ -493,10 +503,43 @@ class Stack(Series, Faults):
         # older features
         self._offset_faults = False
 
+    def set_default_range(self, extent=None):
+        """
+        Set default kriging_data range
+
+        Args:
+            extent (Optional[float, np.array]): extent used to compute the default range--i.e. largest diagonal. If None
+             extent of the linked :class:`Grid` will be used.
+
+        Returns:
+
+        """
+        if extent is None:
+            extent = self.grid.regular_grid.extent
+            if np.sum(extent) == 0 and self.grid.values.shape[0] > 1:
+                extent = np.concatenate((np.min(self.grid.values, axis=0),
+                                         np.max(self.grid.values, axis=0)))[[0, 3, 1, 4, 2, 5]]
+
+        try:
+            range_var = np.sqrt(
+                (extent[0] - extent[1]) ** 2 +
+                (extent[2] - extent[3]) ** 2 +
+                (extent[4] - extent[5]) ** 2)
+        except TypeError:
+            warnings.warn('The extent passed or if None the extent '
+                          'of the grid object has some type of problem',
+                          TypeError)
+            range_var = np.nan
+
+        self.df['range'] = range_var
+
+        return range_var
+
+
     @property
     def faults(self):
         return self
 
     @property
-    def number_features(self):
+    def n_features(self):
         return self.df.shape[0]
