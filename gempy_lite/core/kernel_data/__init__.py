@@ -46,7 +46,7 @@ class Surfaces(object):
                          'isBasement', 'isFault', 'isActive', 'hasData', 'color',
                          'vertices', 'edges', 'sfai', 'id']
 
-        self._properites_vals = []
+        #self.properties_val = []
         self._private_attr = [
             'vertices', 'edges', 'sfai', 'isBasement', 'hasData', 'isFault']
 
@@ -75,8 +75,13 @@ class Surfaces(object):
     @property
     def _public_attr(self):
         """Properties values are arbitrary given by the user. e.g. porosity"""
-        fixed = ['Surface', 'Feature', 'OrderSurface', 'isActive', 'color', 'id', *self._properites_vals]
+        fixed = ['Surface', 'Feature', 'OrderSurface', 'isActive', 'color', 'id', *self.properties_val]
         return fixed
+
+    @property
+    def properties_val(self):
+        all_col = self.df.columns
+        return all_col.drop(self._columns)
 
     @property
     def series(self):

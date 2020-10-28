@@ -2,7 +2,7 @@ import pytest
 import gempy_lite as gp
 import numpy as np
 
-from gempy_lite.core.kernel_data import Stack
+from gempy_lite.core.kernel_data import Stack, Surfaces
 from gempy_lite.core.predictor.solution import XSolution
 
 
@@ -39,6 +39,14 @@ def stack_eg():
 
 
 @pytest.fixture(scope='module')
+def surface_eg(stack_eg):
+    surfaces = Surfaces(stack_eg)
+    surfaces.set_surfaces_names(['foo', 'foo2', 'foo5', 'fee'])
+    surfaces.add_surfaces_values([[2, 2, 2, 6], [2, 2, 1, 8]], ['val_foo', 'val2_foo'])
+    return surfaces
+
+
+@pytest.fixture(scope='module')
 def sol_values(regular_grid):
     rg_s = regular_grid.values.shape[0]
     n_input = 100
@@ -48,16 +56,16 @@ def sol_values(regular_grid):
     n_properties = 2
     # Generate random solution
     values = list()
-    values_matrix = np.random.random_integers(0, 10, (n_features, len_x))
+    values_matrix = np.random.random_integers(0, 10, (n_properties, len_x))
     block_matrix = np.random.random_integers(
-        0, 10, (n_properties, n_features, len_x)
+        0, 10, (n_features, n_properties, len_x)
     )
     values.append(values_matrix)
     values.append(block_matrix)
     return values
 
 
-def test_xsol(sol_values, regular_grid, stack_eg):
-    sol = XSolution(regular_grid, stack=stack_eg)
+def test_xsol(sol_values, regular_grid, stack_eg, surface_eg):
+    sol = XSolution(regular_grid, stack=stack_eg, surfaces=surface_eg)
     sol.set_values(sol_values)
     print(sol.s_regular_grid)

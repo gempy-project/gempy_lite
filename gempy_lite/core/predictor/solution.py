@@ -79,18 +79,32 @@ class XSolution(object):
         if self.stack is not None:
             coords['Features'] = self.stack.df.groupby('isActive').get_group(True).index
 
+        if self.surfaces is not None:
+            coords['Properties'] = self.surfaces.properties_val
+
         coords['X'] = self.grid.regular_grid.x
         coords['Y'] = self.grid.regular_grid.y
         coords['Z'] = self.grid.regular_grid.z
+
         property_matrix = xr.DataArray(
             data=values[0][:, l0:l1].reshape(-1, *self.grid.regular_grid.resolution),
-            dims=['Features', 'X', 'Y', 'Z'],
-            coords=coords
+            dims=['Properties', 'X', 'Y', 'Z'],
         )
 
-        self.s_regular_grid = xr.Dataset({
-            'property_matrix': property_matrix
-        })
+        i, j, _ = values[1].shape
+
+        block_matrix = xr.DataArray(
+            data=values[1][:, :, l0:l1].reshape(i, j, *self.grid.regular_grid.resolution),
+            dims=['Features', 'Properties', 'X', 'Y', 'Z'],
+        )
+
+        self.s_regular_grid = xr.Dataset(
+            {
+                'property_matrix': property_matrix,
+                'block_matrix': block_matrix
+            },
+            coords=coords
+        )
 
 
 @_setdoc_pro([Grid.__doc__, Surfaces.__doc__, Series.__doc__, ds.weights_vector, ds.sfai, ds.bai, ds.mai, ds.vai,
