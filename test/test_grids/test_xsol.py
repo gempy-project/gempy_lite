@@ -7,12 +7,16 @@ from gempy_lite.core.predictor.solution import XSolution
 
 
 @pytest.fixture(scope='module')
-def regular_grid():
+def a_grid():
     # Or we can init one of the default grids since the beginning by passing
     # the correspondant attributes
     grid = gp.Grid(extent=[0, 2000, 0, 2000, -2000, 0],
                    resolution=[50, 50, 50])
     grid.set_active('regular')
+
+    grid.create_custom_grid(np.arange(12).reshape(-1, 3))
+    grid.set_active('custom')
+
     return grid
 
 @pytest.fixture(scope='module')
@@ -47,8 +51,8 @@ def surface_eg(stack_eg):
 
 
 @pytest.fixture(scope='module')
-def sol_values(regular_grid):
-    rg_s = regular_grid.values.shape[0]
+def sol_values(a_grid):
+    rg_s = a_grid.values.shape[0]
     n_input = 100
     len_x = rg_s + n_input
 
@@ -60,12 +64,24 @@ def sol_values(regular_grid):
     block_matrix = np.random.random_integers(
         0, 10, (n_features, n_properties, len_x)
     )
+
+    fault_block = None
+    weights = None
+    scalar_field = np.random.random_integers(20, 30, (n_features, len_x))
+    unknows = None
+    mask_matrix = None
+    fault_mask = None
+
     values.append(values_matrix)
     values.append(block_matrix)
+    for i in [fault_block, weights, scalar_field, unknows, mask_matrix, fault_mask]:
+        values.append(i)
     return values
 
 
-def test_xsol(sol_values, regular_grid, stack_eg, surface_eg):
-    sol = XSolution(regular_grid, stack=stack_eg, surfaces=surface_eg)
+def test_xsol(sol_values, a_grid, stack_eg, surface_eg):
+    sol = XSolution(a_grid, stack=stack_eg, surfaces=surface_eg)
     sol.set_values(sol_values)
     print(sol.s_regular_grid)
+
+    print(sol.s_custom_grid)

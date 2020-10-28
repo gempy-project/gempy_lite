@@ -69,6 +69,46 @@ class XSolution(object):
 
     def set_values(self, values: Iterable):
         self.set_values_to_regular_grid(values)
+        self.set_custom_grid(values)
+
+    def set_custom_grid(self, values: Iterable, l0=None, l1=None):
+        if l0 is None or l1 is None:
+            l0, l1 = self.get_grid_args('custom')
+        coords = dict()
+
+        if self.stack is not None:
+            coords['Features'] = self.stack.df.groupby('isActive').get_group(True).index
+
+        if self.surfaces is not None:
+            coords['Properties'] = self.surfaces.properties_val
+
+        cartesian_matrix = xr.DataArray(
+            data=self.grid.custom_grid.values,
+            dims=['Point', 'XYZ'],
+            coords= {'XYZ': ['X', 'Y', 'Z'],
+                     'Point': [1, 2, 3, 4]}
+        )
+
+        property_matrix = xr.DataArray(
+            data=values[0][:, l0:l1],
+            dims=['Properties', 'Point'],
+        )
+
+        scalar_field_matrix = xr.DataArray(
+            data=values[4][:, l0:l1],
+            dims=['Features', 'Point'],
+        )
+
+        self.s_custom_grid = xr.Dataset(
+            {
+                'property_matrix': property_matrix,
+                'scalar_field_matrix': scalar_field_matrix,
+                'cartesian_matrix': cartesian_matrix
+            },
+            coords = coords
+        )
+
+        self.custom = np.array([values[0][:, l0: l1], values[4][:, l0: l1].astype(float)])
 
     def set_values_to_regular_grid(self, values: Iterable, l0=None, l1=None):
         if l0 is None or l1 is None:
@@ -296,8 +336,8 @@ class Solution(object):
 
         """
         raise NotImplementedError()
-        rg = self.grid.regular_grid
-        spacing = self.grid.regular_grid.get_dx_dy_dz(rescale=rescale)
+        rg = self.grid.a_grid
+        spacing = self.grid.a_grid.get_dx_dy_dz(rescale=rescale)
         vertices, simplices, normals, values = measure.marching_cubes(
             scalar_field.reshape(rg.resolution),
             level, spacing=spacing, mask=mask_array, **kwargs)
