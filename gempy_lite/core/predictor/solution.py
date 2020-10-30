@@ -12,9 +12,110 @@ import gempy_lite.utils.docstring as ds
 import xarray as xr
 
 
-@_setdoc_pro([Grid.__doc__, Surfaces.__doc__, Series.__doc__, ds.weights_vector, ds.sfai, ds.bai, ds.mai, ds.vai,
-              ds.lith_block, ds.sfm, ds.bm, ds.mm, ds.vm, ds.vertices, ds.edges, ds.geological_map])
-class XSolution(object):
+class XSolutionCompat:
+    """This class is for GemPy Lite to enable compatibility with a bunch
+     of old functionality."""
+
+    # Input data results
+    @property
+    def scalar_field_at_surface_points(self):
+        return self.s_at_surface_points['scalar_field_v3'].values
+
+    @property
+    def block_at_surface_points(self):
+        return self.s_at_surface_points['block_v3'].values
+
+    @property
+    def mask_at_surface_points(self):
+        return self.s_at_surface_points['mask_v3'].values
+
+    @property
+    def values_at_surface_points(self):
+        return self.s_at_surface_points['values_v3'].values
+
+    @property
+    def lith_block(self):
+        return self.s_regular_grid['property_matrix'].loc['id'].values.reshape(1, -1)
+
+    @property
+    def scalar_field_matrix(self):
+        shape = self.s_regular_grid['scalar_field_matrix'].shape
+        return self.s_regular_grid['scalar_field_matrix'].values.reshape(shape[0],
+                                                                         -1)
+
+    @property
+    def block_matrix(self):
+        shape = self.s_regular_grid['block_matrix'].shape
+        return self.s_regular_grid['block_matrix'].values.reshape(shape[0],
+                                                                  shape[1],
+                                                                  -1)
+
+    @property
+    def mask_matrix(self):
+        shape = self.s_regular_grid['mask_matrix'].shape
+        return self.s_regular_grid['mask_matrix'].values.reshape(shape[0], -1)
+
+    # This is should be private
+    # @property
+    # def mask_matrix_pad(self):
+    #     return
+
+    @property
+    def values_matrix(self):
+        prop = self.s_regular_grid['property_matrix'].Properties.values
+        sel = prop != 'id'
+        values_other_than_id = prop[sel]
+        array = self.s_regular_grid['property_matrix'].loc[
+            values_other_than_id].values
+        return array.reshape(len(values_other_than_id), -1)
+
+    @property
+    def gradient(self):
+        raise NotImplementedError
+
+    @property
+    def vertices(self):
+        return
+
+    @property
+    def edges(self):
+        return
+
+    @property
+    def geological_map(self):
+        shape = self.s_topography['scalar_field_matrix'].shape
+
+        p = self.s_topography['property_matrix'].values.reshape(shape[0], -1)
+        s = self.s_topography['scalar_field_matrix'].values.reshape(shape[0], -1)
+        return np.array([p, s])
+
+    @property
+    def sections(self):
+        return NotImplementedError
+    # shape = self.s_sections['scalar_field_matrix'].shape
+    #
+    # p = self.s_topography['property_matrix'].values.reshape(shape[0], -1)
+    # s = self.s_topography['scalar_field_matrix'].values.reshape(shape[0], -1)
+    # return np.array([p, s])
+
+    @property
+    def custom(self):
+        return
+
+    @property
+    def fw_gravity(self):
+        return
+
+    @property
+    def fw_magnetics(self):
+        return
+
+@_setdoc_pro(
+    [Grid.__doc__, Surfaces.__doc__, Series.__doc__, ds.weights_vector, ds.sfai,
+     ds.bai, ds.mai, ds.vai,
+     ds.lith_block, ds.sfm, ds.bm, ds.mm, ds.vm, ds.vertices, ds.edges,
+     ds.geological_map])
+class XSolution(object, XSolutionCompat):
     """This class stores the output of the interpolation and the necessary objects
     to visualize and manipulate this data.
 
@@ -53,6 +154,7 @@ class XSolution(object):
                  stack: Stack = None,
                  ):
         # self.additional_data = additional_data
+
         self.grid = grid
         #  self.surface_points = surface_points
         self.stack = stack
@@ -61,91 +163,248 @@ class XSolution(object):
         # Define xarrays
         self.weights_vector = None
         self.at_surface_points = None
-        self.s_regular_grid = None
+        self.s_regular_grid = xr.Dataset()
+        self.s_custom_grid = xr.Dataset()
+        self.s_topography = xr.Dataset()
+        self.s_at_surface_points = xr.Dataset()
+        self.s_sections = dict()
         self.meshes = None
 
-    def get_grid_args(self, grid_type: str) -> tuple:
-        return self.grid.get_grid_args(grid_type)
+    def set_values(self,
+                   values: list,
+                   active_features=None,
+                   surf_properties=None,
+                   attach_xyz=True):
+        """ At this stage we should split values into the different grids
 
-    def set_values(self, values: Iterable):
-        self.set_values_to_regular_grid(values)
-        self.set_custom_grid(values)
+        Args:
+            values:
 
-    def set_custom_grid(self, values: Iterable, l0=None, l1=None):
-        if l0 is None or l1 is None:
-            l0, l1 = self.get_grid_args('custom')
-        coords = dict()
+        Returns:
 
-        if self.stack is not None:
-            coords['Features'] = self.stack.df.groupby('isActive').get_group(True).index
+        """
 
-        if self.surfaces is not None:
-            coords['Properties'] = self.surfaces.properties_val
+        # Get an array with all the indices for each grid
+        l = self.grid.length
 
-        cartesian_matrix = xr.DataArray(
-            data=self.grid.custom_grid.values,
-            dims=['Point', 'XYZ'],
-            coords= {'XYZ': ['X', 'Y', 'Z'],
-                     'Point': [1, 2, 3, 4]}
+        coords_base, xyz = self.prepare_common_args(active_features, attach_xyz,
+                                                    surf_properties)
+        self.weights_vector = values[3]
+
+        if self.grid.active_grids[0]:
+            self.set_values_to_regular_grid(values, l[0], l[1], coords_base.copy())
+        if self.grid.active_grids[1]:
+            self.set_values_to_custom_grid(values, l[1], l[2], coords_base.copy(),
+                                           xyz=xyz)
+        if self.grid.active_grids[2]:
+            self.set_values_to_topography(values, l[2], l[3], coords_base.copy())
+        if self.grid.active_grids[3]:
+            self.set_values_to_sections(values, l[3], l[4], coords_base.copy())
+        if self.grid.active_grids[4]:
+            self.set_values_to_centered()
+
+        # TODO: Add xyz from surface points
+        self.set_values_to_surface_points(values, l[-1], coords_base, xyz=None)
+
+    def prepare_common_args(self, active_features, attach_xyz, surf_properties):
+        if active_features is None and self.stack is not None:
+            active_features = self.stack.df.groupby('isActive').get_group(True).index
+        if surf_properties is None and self.surfaces is not None:
+            surf_properties = self.surfaces.properties_val
+        coords_base = dict()
+        if active_features is not None:
+            coords_base['Features'] = active_features
+        if surf_properties is not None:
+            coords_base['Properties'] = surf_properties
+        if attach_xyz and self.grid.custom_grid is not None:
+            xyz = self.grid.custom_grid.values
+        else:
+            xyz = None
+        return coords_base, xyz
+
+    def set_values_to_centered(self):
+        return
+
+    def set_values_to_surface_points(self, values, l0, coords_base, xyz=None):
+        coords = coords_base
+        l1 = values[0].shape[-1]
+        arrays = self.create_unstruct_xarray(values, l0, l1, xyz)
+
+        self.s_at_surface_points = xr.Dataset(
+            data_vars=arrays,
+            coords=coords
         )
+        return self.s_at_surface_points
 
-        property_matrix = xr.DataArray(
-            data=values[0][:, l0:l1],
-            dims=['Properties', 'Point'],
-        )
+    @staticmethod
+    def create_struc_xarrays(values, l0, l1, res: Union[list, np.ndarray]):
+        arrays = dict()
 
-        scalar_field_matrix = xr.DataArray(
-            data=values[4][:, l0:l1],
-            dims=['Features', 'Point'],
-        )
+        n_dim = len(res)
+        xyz = ['X', 'Y', 'Z'][:n_dim]
+        if values[0] is not None:
+            # This encompass lith_block and values matrix
+            property_matrix = xr.DataArray(
+                data=values[0][:, l0:l1].reshape(-1, *res),
+                dims=['Properties', *xyz],
+            )
+            arrays['property_matrix'] = property_matrix
+
+        if values[1] is not None:
+            # This is the block matrix
+            i, j, _ = values[1].shape
+            block_matrix = xr.DataArray(
+                data=values[1][:, :, l0:l1].reshape(i, j, *res),
+                dims=['Features', 'Properties', *xyz],
+            )
+            arrays['block_matrix'] = block_matrix
+
+            # Fault block?
+
+        if values[4] is not None:
+            # Scalar field matrix
+            scalar_matrix = xr.DataArray(
+                data=values[4][:, l0:l1].reshape(-1, *res),
+                dims=['Features', *xyz],
+            )
+            arrays['scalar_field_matrix'] = scalar_matrix
+
+        if values[6] is not None:
+            # Mask matrix
+            mask_matrix = xr.DataArray(
+                data=values[6][:, l0:l1].reshape(-1, *res),
+                dims=['Features', *xyz],
+            )
+            arrays['mask_matrix'] = mask_matrix
+
+        if values[7] is not None:
+            # Fault mask matrix
+            fault_mask = xr.DataArray(
+                data=values[7][:, l0:l1].reshape(-1, *res),
+                dims=['Features', *xyz],
+            )
+            arrays['fault_mask'] = fault_mask
+
+        return arrays
+
+    @staticmethod
+    def create_unstruct_xarray(values, l0, l1, xyz):
+        arrays = dict()
+        if xyz is not None:
+            cartesian_matrix = xr.DataArray(
+                data=xyz,
+                dims=['Point', 'XYZ'],
+                coords={'XYZ': ['X', 'Y', 'Z']}
+            )
+            arrays['cartesian_matrix'] = cartesian_matrix
+
+        if values[0] is not None:
+            # Values and lith block
+            property_v3 = xr.DataArray(
+                data=values[0][:, l0:l1],
+                dims=['Properties', 'Point'],
+            )
+
+            arrays['property_v3'] = property_v3
+
+        if values[1] is not None:
+            # block
+            block_v3 = xr.DataArray(
+                data=values[1][:, :, l0:l1],
+                dims=['Features', 'Properties', 'Point'],
+            )
+
+            arrays['block_v3'] = block_v3
+
+        if values[4] is not None:
+            # Scalar field
+            scalar_field_v3 = xr.DataArray(
+                data=values[4][:, l0:l1],
+                dims=['Features', 'Point'],
+            )
+            arrays['scalar_field_v3'] = scalar_field_v3
+
+        if values[6] is not None:
+            # Scalar field
+            mask_v3 = xr.DataArray(
+                data=values[6][:, l0:l1],
+                dims=['Features', 'Point'],
+            )
+            arrays['mask_v3'] = mask_v3
+
+        return arrays
+
+    def set_values_to_custom_grid(self, values: list, l0, l1,
+                                  coords_base: dict, xyz=None):
+
+        coords = coords_base
+        arrays = self.create_unstruct_xarray(values, l0, l1, xyz)
 
         self.s_custom_grid = xr.Dataset(
-            {
-                'property_matrix': property_matrix,
-                'scalar_field_matrix': scalar_field_matrix,
-                'cartesian_matrix': cartesian_matrix
-            },
-            coords = coords
+            data_vars=arrays,
+            coords=coords
         )
+        return self.s_custom_grid
 
-        self.custom = np.array([values[0][:, l0: l1], values[4][:, l0: l1].astype(float)])
+    def set_values_to_regular_grid(self, values: list, l0, l1,
+                                   coords_base: dict):
 
-    def set_values_to_regular_grid(self, values: Iterable, l0=None, l1=None):
-        if l0 is None or l1 is None:
-            l0, l1 = self.get_grid_args('regular')
+        coords = self.add_cartesian_coords(coords_base)
 
-        coords = dict()
-
-        if self.stack is not None:
-            coords['Features'] = self.stack.df.groupby('isActive').get_group(True).index
-
-        if self.surfaces is not None:
-            coords['Properties'] = self.surfaces.properties_val
-
-        coords['X'] = self.grid.regular_grid.x
-        coords['Y'] = self.grid.regular_grid.y
-        coords['Z'] = self.grid.regular_grid.z
-
-        property_matrix = xr.DataArray(
-            data=values[0][:, l0:l1].reshape(-1, *self.grid.regular_grid.resolution),
-            dims=['Properties', 'X', 'Y', 'Z'],
-        )
-
-        i, j, _ = values[1].shape
-
-        block_matrix = xr.DataArray(
-            data=values[1][:, :, l0:l1].reshape(i, j, *self.grid.regular_grid.resolution),
-            dims=['Features', 'Properties', 'X', 'Y', 'Z'],
-        )
+        arrays = self.create_struc_xarrays(values, l0, l1,
+                                           self.grid.regular_grid.resolution)
 
         self.s_regular_grid = xr.Dataset(
-            {
-                'property_matrix': property_matrix,
-                'block_matrix': block_matrix
-            },
+            data_vars=arrays,
             coords=coords
         )
 
+    def add_cartesian_coords(self, coords_base):
+        coords = coords_base
+        coords['X'] = self.grid.regular_grid.x
+        coords['Y'] = self.grid.regular_grid.y
+        coords['Z'] = self.grid.regular_grid.z
+        return coords
+
+    def set_values_to_topography(self,
+                                 values: list,
+                                 l0, l1,
+                                 coords_base):
+        coords = coords_base
+        coords['X'] = self.grid.topography.x
+        coords['Y'] = self.grid.topography.y
+        resolution = self.grid.topography.resolution
+        arrays = self.create_struc_xarrays(values, l0, l1, resolution)
+
+        self.s_topography = xr.Dataset(
+            data_vars=arrays,
+            coords=coords
+        )
+        return self.s_topography
+
+    def set_values_to_sections(self,
+                               values: list,
+                               l0, l1,
+                               coords_base):
+        coords = coords_base
+        sections = self.grid.sections
+
+        for e, axis_coord in enumerate(sections.generate_axis_coord()):
+            resolution = sections.resolution[e]
+            l0_s = sections.length[e]
+            l1_s = sections.length[e + 1]
+            name, xy = axis_coord
+            coords['X'] = xy[:, 0]
+            coords['Y'] = xy[:, 1]
+
+            arrays = self.create_struc_xarrays(values, l0 + l0_s, l0 + l1_s,
+                                               resolution)
+
+            self.s_sections[name] = xr.Dataset(
+                data_vars=arrays,
+                coords=coords
+            )
+        return self.s_sections
 
 @_setdoc_pro([Grid.__doc__, Surfaces.__doc__, Series.__doc__, ds.weights_vector, ds.sfai, ds.bai, ds.mai, ds.vai,
               ds.lith_block, ds.sfm, ds.bm, ds.mm, ds.vm, ds.vertices, ds.edges, ds.geological_map])
