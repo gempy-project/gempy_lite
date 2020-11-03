@@ -1,3 +1,4 @@
+import warnings
 from typing import Union, Iterable
 
 import numpy as np
@@ -54,7 +55,7 @@ class Faults(object):
             offset_faults (bool): If True by default faults offset other faults
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults`
+            :class:`gempy_lite.core.kernel_data.stack.Faults`
 
         """
         series_fault = np.atleast_1d(series_fault)
@@ -65,7 +66,7 @@ class Faults(object):
 
         if series_fault[0] is not None:
             assert np.isin(series_fault, self.df.index).all(), 'series_faults must already ' \
-                                                                                      'exist in the the series df.'
+                                                               'exist in the the series df.'
             if toggle is True:
                 self.df.loc[series_fault, 'isFault'] = self.df.loc[series_fault, 'isFault'] ^ True
             else:
@@ -89,7 +90,7 @@ class Faults(object):
 
         return self
 
-    def set_default_faults_relations(self, offset_faults:bool=None):
+    def set_default_faults_relations(self, offset_faults: bool = None):
         if offset_faults is not None:
             self._offset_faults = offset_faults
 
@@ -120,7 +121,7 @@ class Faults(object):
             toggle (bool): if True, passing a name which is already True will set it False.
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults`
+            :class:`gempy_lite.core.kernel_data.stack.Faults`
         """
         if series_finite[0] is not None:
             # check if given series is/are in dataframe
@@ -144,7 +145,7 @@ class Faults(object):
              Rows affect (offset) columns
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Faults.faults_relations_df`
+            :class:`gempy_lite.core.kernel_data.stack.Faults.faults_relations_df`
 
         """
         # TODO: block the lower triangular matrix of being changed
@@ -193,15 +194,17 @@ class Series(object):
 
     def __init__(self, faults, series_names: list = None):
 
+        self._default_values = [-1, 'Erosion', False]
+
         self.faults = faults
 
         if series_names is None:
             series_names = ['Default series']
 
         self.df = pn.DataFrame(np.array([[1, np.nan]]), index=pn.CategoricalIndex(series_names, ordered=False),
-                               columns=['order_series', 'BottomRelation'])
+                               columns=['OrderFeature', 'BottomRelation'])
 
-        self.df['order_series'] = self.df['order_series'].astype(int)
+        self.df['OrderFeature'] = self.df['OrderFeature'].astype(int)
         self.df['BottomRelation'] = pn.Categorical(['Erosion'], categories=['Erosion', 'Onlap', 'Fault'])
         self.df['isActive'] = False
 
@@ -215,7 +218,11 @@ class Series(object):
         """
         Reset the column order series to monotonic ascendant values.
         """
-        self.df.at[:, 'order_series'] = pn.RangeIndex(1, self.df.shape[0] + 1)
+        self.df.at[:, 'OrderFeature'] = pn.RangeIndex(1, self.df.shape[0] + 1)
+
+    @property
+    def n_features(self):
+        return self.df.shape[0]
 
     @_setdoc_pro(reset_order_series.__doc__)
     def set_series_index(self, series_order: Union[list, np.ndarray], reset_order_series=True):
@@ -247,12 +254,8 @@ class Series(object):
 
         # But we need to update the values too
         for c in series_order:
-            try:
-                self.df.loc[c] = [-1, 'Erosion', False, False, False]
-            # This is in case someone use the old series
-            except ValueError:
-                self.df.loc[c] = [-1, 'Erosion', False]
-                self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
+            self.df.loc[c] = self._default_values
+            self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
             self.faults.faults_relations_df.loc[c, c] = False
 
         self.faults.faults_relations_df.fillna(False, inplace=True)
@@ -261,7 +264,8 @@ class Series(object):
             self.reset_order_series()
         return self
 
-    def set_bottom_relation(self, series_list: Union[str, list], bottom_relation: Union[str, list]):
+    def set_bottom_relation(self, series_list: Union[str, list],
+                            bottom_relation: Union[str, list]):
         """Set the bottom relation between the series and the one below.
 
         Args:
@@ -269,7 +273,7 @@ class Series(object):
             bottom_relation (str{Onlap, Erode, Fault}, list[str]):
 
         Returns:
-            :class:`gempy_lite.core.data_modules.stack.Stack`
+            :class:`gempy_lite.core.kernel_data.stack.Stack`
         """
         self.df.loc[series_list, 'BottomRelation'] = bottom_relation
 
@@ -302,11 +306,8 @@ class Series(object):
 
         for c in series_list:
             # This is in case someone wants to run the old series
-            try:
-                self.df.loc[c] = [-1, 'Erosion', False, False, False]
-            except ValueError:
-                self.df.loc[c] = [-1, 'Erosion', False]
-                self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
+            self.df.loc[c] = self._default_values
+            self.faults.df.loc[c, ['isFault', 'isFinite']] = [False, False]
             self.faults.faults_relations_df.loc[c, c] = False
 
         self.faults.faults_relations_df.fillna(False, inplace=True)
@@ -393,17 +394,17 @@ class Series(object):
         Returns:
             Series
         """
-        group = self.df['order_series']
+        group = self.df['OrderFeature']
         assert np.isin(new_value, group), 'new_value must exist already in the order_surfaces group.'
         old_value = group[series_name]
-        self.df['order_series'] = group.replace([new_value, old_value], [old_value, new_value])
+        self.df['OrderFeature'] = group.replace([new_value, old_value], [old_value, new_value])
         self.sort_series()
         self.update_faults_index_reorder()
 
         return self
 
     def sort_series(self):
-        self.df.sort_values(by='order_series', inplace=True)
+        self.df.sort_values(by='OrderFeature', inplace=True)
         self.df.index = self.df.index.reorder_categories(self.df.index.to_numpy())
 
     def update_faults_index_rename(self):
@@ -428,10 +429,6 @@ class Series(object):
         self.faults.set_default_faults_relations()
 
 
-class MockFault:
-    pass
-
-
 class Stack(Series, Faults):
     """Class that encapsulates all type of geological features. So far is Series and
           Faults
@@ -442,47 +439,150 @@ class Stack(Series, Faults):
              rel_matrix:
 
     """
-    def __init__(self, features_names: Iterable = None, fault_features: Iterable = None,
-                 rel_matrix: Iterable = None):
+
+    def __init__(
+            self,
+            features_names: Iterable = None,
+            fault_features: Iterable = None,
+            rel_matrix: Iterable = None
+    ):
+
+        # Dataframe views
+        self._columns = ['OrderFeature', 'BottomRelation', 'Level',
+                         'Range', 'Sill',
+                         'DriftDegree',
+                         'isActive', 'isFault', 'isFinite',
+                         'isComputed']
+
+        self._kriging_view = ['Range', 'Sill', 'DriftDegree']
+        self._public_attr = ['OrderFeature', 'BottomRelation', 'Level',
+                             'Range', 'Sill',
+                             'DriftDegree',
+                             'isActive', 'isFault', 'isFinite']
+        self._private_attr = ['isComputed']
+
+        # Default values
+        self._default_values = [1, np.nan, 0, 5, 1, 1, False, False, False, False]
 
         if features_names is None:
             features_names = ['Default series']
 
-        # Set unique df
-        df_ = pn.DataFrame(np.array([[1, np.nan, False, False, False]]),
-                               index=pn.CategoricalIndex(features_names, ordered=False),
-                               columns=['order_series', 'BottomRelation', 'isActive', 'isFault', 'isFinite'])
+        # Init df
+        df_ = pn.DataFrame(np.array([self._default_values]),
+                           index=pn.CategoricalIndex(features_names, ordered=False),
+                           columns=self._columns)
 
-        self.df = df_.astype({'order_series': int,
+        # Setting attribute types:
+        self.df = df_.astype({'OrderFeature': int,
                               'BottomRelation': 'category',
+                              'Level': int,
                               'isActive': bool,
                               'isFault': bool,
-                              'isFinite': bool})
+                              'isFinite': bool,
+                              'Range': float,
+                              'Sill': float,
+                              'DriftDegree': int,
+                              'isComputed': bool})
 
-        self.df['order_series'] = self.df['order_series'].astype(int)
-        self.df['BottomRelation'] = pn.Categorical(['Erosion'], categories=['Erosion', 'Onlap', 'Fault'])
-        # self.df['isActive'] = False
-        # self.df['isFault'] = False
-        # self.df['isFinite'] = False
-        # self.faults = MockFault()
-        # self.faults.df = self.df
+        #self.df['OrderFeature'] = self.df['OrderFeature'].astype(int)
+        self.df['BottomRelation'] = pn.Categorical(
+            ['Erosion'],
+            categories=['Erosion', 'Onlap', 'Fault']
+        )
 
-        self.faults = self
-        self.faults_relations_df = pn.DataFrame(index=pn.CategoricalIndex(['Default series']),
-                                                columns=pn.CategoricalIndex(['Default series', '']), dtype='bool')
+        # Init aux df
+        self.faults_relations_df = pn.DataFrame(
+            index=pn.CategoricalIndex(['Default series']),
+            columns=pn.CategoricalIndex(['Default series', '']),
+            dtype='bool'
+        )
 
+        # ----------
         self.set_is_fault(series_fault=fault_features)
         self.set_fault_relation(rel_matrix=rel_matrix)
-        self.n_faults = 0
+
+        # Property that controls if by default ALL younger faults offset ALL
+        # older features
         self._offset_faults = False
 
+    def set_default_range(self, extent=None):
+        """
+        Set default kriging_data range
 
+        Args:
+            extent (Optional[float, np.array]): extent used to compute the default range--i.e. largest diagonal. If None
+             extent of the linked :class:`Grid` will be used.
 
+        Returns:
 
+        """
+        if extent is None:
+            extent = self.grid.regular_grid.extent
+            if np.sum(extent) == 0 and self.grid.values.shape[0] > 1:
+                extent = np.concatenate((np.min(self.grid.values, axis=0),
+                                         np.max(self.grid.values, axis=0)))[[0, 3, 1, 4, 2, 5]]
 
+        try:
+            range_var = np.sqrt(
+                (extent[0] - extent[1]) ** 2 +
+                (extent[2] - extent[3]) ** 2 +
+                (extent[4] - extent[5]) ** 2)
+        except TypeError:
+            warnings.warn('The extent passed or if None the extent '
+                          'of the grid object has some type of problem',
+                          TypeError)
+            range_var = np.nan
 
+        self.df['range'] = range_var
 
+        return range_var
 
+    @property
+    def faults(self):
+        return self
 
+    @property
+    def kriging(self):
+        return self.df[self._kriging_view]
 
+    @property
+    def n_features(self):
+        return self.df.shape[0]
+
+    def modify_parameter(self, attribute: str, value, idx=None, **kwargs):
+        """Method to modify a given field
+
+         Args:
+             attribute (str): Name of the field to modify
+             value: new value of the field. It will have to exist in the category in order for pandas to modify it.
+             kwargs:
+                 * u_grade_sep (str): If drift equations values are `str`, symbol that separates the values.
+
+         Returns:
+             :class:`pandas.DataFrame`: df where options data is stored
+         """
+
+        u_grade_sep = kwargs.get('u_grade_sep', ',')
+        assert np.isin(attribute, self.df.columns).all(), 'Valid properties are: ' +\
+                                                          np.array2string(self.df.columns)
+        if idx is None:
+            idx = slice(None)
+
+        if attribute == 'drift equations':
+            value = np.asarray(value)
+            print(value)
+
+            if type(value) is str:
+                value = np.fromstring(value[1:-1], sep=u_grade_sep, dtype=int)
+            try:
+                assert value.shape[0] is self.structure.df.loc['values', 'len series surface_points'].shape[0]
+                print(value, attribute)
+                self.df.at[idx, attribute] = value
+                print(self.df)
+
+            except AssertionError:
+                print('u_grade length must be the same as the number of series')
+
+        else:
+            self.df.loc[idx, attribute] = value
 

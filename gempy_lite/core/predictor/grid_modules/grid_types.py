@@ -1,6 +1,4 @@
-from gempy_lite.core.grid_modules.create_topography import LoadDEMArtificial
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.constants import G
 from scipy import interpolate
 from gempy_lite.utils.meta import _setdoc_pro
@@ -33,12 +31,26 @@ class RegularGrid:
         self.values = np.zeros((0, 3))
         self.values_r = np.zeros((0, 3))
         self.mask_topo = np.zeros((0, 3), dtype=bool)
+        self.x = None
+        self.y = None
+        self.z = None
+
         if extent is not None and resolution is not None:
             self.set_regular_grid(extent, resolution)
             self.dx, self.dy, self.dz = self.get_dx_dy_dz()
 
-    @staticmethod
-    def create_regular_grid_3d(extent, resolution):
+    def set_coord(self, extent, resolution):
+        dx = (extent[1] - extent[0]) / resolution[0]
+        dy = (extent[3] - extent[2]) / resolution[1]
+        dz = (extent[5] - extent[4]) / resolution[2]
+
+        self.x = np.linspace(extent[0] + dx / 2, extent[1] - dx / 2, resolution[0], dtype="float64")
+        self.y = np.linspace(extent[2] + dy / 2, extent[3] - dy / 2, resolution[1], dtype="float64")
+        self.z = np.linspace(extent[4] + dz / 2, extent[5] - dz / 2, resolution[2], dtype="float64")
+
+        return self.x, self.y, self.z
+
+    def create_regular_grid_3d(self, extent, resolution):
         """
         Method to create a 3D regular grid where is interpolated
 
@@ -51,16 +63,8 @@ class RegularGrid:
 
         """
 
-        dx = (extent[1] - extent[0]) / resolution[0]
-        dy = (extent[3] - extent[2]) / resolution[1]
-        dz = (extent[5] - extent[4]) / resolution[2]
-
-        g = np.meshgrid(
-            np.linspace(extent[0] + dx / 2, extent[1] - dx / 2, resolution[0], dtype="float64"),
-            np.linspace(extent[2] + dy / 2, extent[3] - dy / 2, resolution[1], dtype="float64"),
-            np.linspace(extent[4] + dz / 2, extent[5] - dz / 2, resolution[2], dtype="float64"), indexing="ij"
-        )
-
+        coords = self.set_coord(extent, resolution)
+        g = np.meshgrid(*coords, indexing="ij")
         values = np.vstack(tuple(map(np.ravel, g))).T.astype("float64")
         return values
 

@@ -1,20 +1,23 @@
 # Importing GemPy
-import gempy_lite as gp
+import json
 
+import gempy_lite as gp
 
 # Importing auxiliary libraries
 import numpy as np
-import pandas as pn
+import pandas as pd
 import matplotlib.pyplot as plt
 import pytest
 
-import gempy_lite.core.data_modules.geometric_data
-import gempy_lite.core.data_modules.stack
+import gempy_lite.core.kernel_data
+import gempy_lite.core.kernel_data.geometric_data
+import gempy_lite.core.kernel_data.stack
+import gempy_lite.core.model_data
 
 
 @pytest.fixture(scope='module')
 def create_faults():
-    faults = gempy_lite.core.data_modules.stack.Faults()
+    faults = gempy_lite.core.kernel_data.stack.Faults()
     return faults
 
 
@@ -22,7 +25,7 @@ def create_faults():
 def create_series(create_faults):
     faults = create_faults
 
-    series = gempy_lite.core.data_modules.stack.Series(faults)
+    series = gempy_lite.core.kernel_data.stack.Series(faults)
     series.set_series_index(['foo', 'foo2', 'foo5', 'foo7'])
     series.add_series('foo3')
     series.delete_series('foo2')
@@ -43,7 +46,7 @@ def create_series(create_faults):
 @pytest.fixture(scope='module')
 def create_surfaces(create_series):
     series = create_series
-    surfaces = gp.Surfaces(series)
+    surfaces = gempy_lite.core.kernel_data.Surfaces(series)
     surfaces.set_surfaces_names(['foo', 'foo2', 'foo5'])
 
     print(series)
@@ -55,7 +58,7 @@ def create_surfaces(create_series):
     # The column surface is also a pandas.Categories.
     # This will be important for the Data clases (SurfacePoints and Orientations)
 
-    print(surfaces.df['surface'])
+    print(surfaces.df['Surface'])
 
     ### Set values
 
@@ -91,9 +94,9 @@ def create_surfaces(create_series):
     # are pandas categories. To get a overview of what this mean
     # check https://pandas.pydata.org/pandas-docs/stable/categorical.html.
 
-    print(surfaces.df['series'])
+    print(surfaces.df['Feature'])
 
-    print(surfaces.df['surface'])
+    print(surfaces.df['Surface'])
 
     # ### Map series to surface
 
@@ -102,14 +105,14 @@ def create_surfaces(create_series):
 
     d = {"foo7": 'foo', "booX": ('foo2', 'foo5', 'fee')}
 
-    surfaces.map_series(d)
-    surfaces.map_series({"foo7": 'foo', "boo": ('foo2', 'foo5', 'fee')})
+    surfaces.map_stack(d)
+    surfaces.map_stack({"foo7": 'foo', "boo": ('foo2', 'foo5', 'fee')})
 
     print(surfaces)
 
     # An advantage of categories is that they are order so no we can tidy the df by series and surface
 
-    surfaces.df.sort_values(by='series', inplace=True)
+    surfaces.df.sort_values(by='Feature', inplace=True)
 
     # If we change the basement:
 
@@ -129,6 +132,9 @@ def create_surfaces(create_series):
 
     print(surfaces)
 
+    print(surfaces.n_surfaces_per_feature)
+    np.testing.assert_array_almost_equal(surfaces.n_surfaces_per_feature,
+                                         np.array([0, 2, 1, 0, 1], dtype=int))
     # We can use `set_is_fault` to choose which of our series are faults:
     return surfaces
 
@@ -140,23 +146,22 @@ def create_surface_points(create_surfaces, create_series):
     # These two DataFrames (df from now on) will contain the individual information of each point at an interface or
     # orientation. Some properties of this table are mapped from the *df* below.
     surfaces = create_surfaces
-    surface_points = gempy_lite.core.data_modules.geometric_data.SurfacePoints(surfaces)
+    surface_points = gempy_lite.core.kernel_data.geometric_data.SurfacePoints(surfaces)
 
     print(surface_points)
 
-    surface_points.set_surface_points(pn.DataFrame(np.random.rand(6, 3)), ['foo', 'foo5', 'lala', 'foo5', 'lala', 'feeeee'])
+    surface_points.set_surface_points(pd.DataFrame(np.random.rand(6, 3)),
+                                      ['foo', 'foo5', 'lala', 'foo5', 'lala', 'feeeee'])
 
     print(surface_points)
 
-    surface_points.map_data_from_surfaces(surfaces, 'series')
+    surface_points.map_data_from_surfaces(surfaces, 'Feature')
     print(surface_points)
-
 
     surface_points.map_data_from_surfaces(surfaces, 'id')
     print(surface_points)
 
-
-    surface_points.map_data_from_series(create_series, 'order_series')
+    surface_points.map_data_from_series(create_series, 'OrderFeature')
     print(surface_points)
 
     surface_points.sort_table()
@@ -169,7 +174,7 @@ def create_orientations(create_surfaces, create_series):
     surfaces = create_surfaces
 
     # ### Orientations
-    orientations = gempy_lite.core.data_modules.geometric_data.Orientations(surfaces)
+    orientations = gempy_lite.core.kernel_data.geometric_data.Orientations(surfaces)
 
     print(orientations)
 
@@ -190,13 +195,13 @@ def create_orientations(create_surfaces, create_series):
     print(orientations)
 
     # ### Mapping data from the other df
-    orientations.map_data_from_surfaces(surfaces, 'series')
+    orientations.map_data_from_surfaces(surfaces, 'Feature')
     print(orientations)
 
     orientations.map_data_from_surfaces(surfaces, 'id')
     print(orientations)
 
-    orientations.map_data_from_series(create_series, 'order_series')
+    orientations.map_data_from_series(create_series, 'OrderFeature')
     print(orientations)
 
     orientations.update_annotations()
@@ -204,7 +209,7 @@ def create_orientations(create_surfaces, create_series):
 
 
 def test_add_orientation_with_pole(create_surfaces):
-    orientations = gempy_lite.core.data_modules.geometric_data.Orientations(create_surfaces)
+    orientations = gempy_lite.core.kernel_data.geometric_data.Orientations(create_surfaces)
     orientations.add_orientation(1, 1, 1, 'foo', pole_vector=(1, 0, 1))
     orientations.add_orientation(2, 2, 2, 'foo', orientation=(0, 0, 1))
     orientations.add_orientation(1, 1, 1, 'foo', pole_vector=(.45, 0, .45))
@@ -224,16 +229,16 @@ def create_grid():
 
 @pytest.fixture(scope='module')
 def create_rescaling(create_surface_points, create_orientations, create_grid):
-    rescaling = gempy_lite.core.data_modules.geometric_data.RescaledData(create_surface_points, create_orientations, create_grid)
+    rescaling = gempy_lite.core.model_data.RescaledData(create_surface_points, create_orientations, create_grid)
     return rescaling
 
 
 @pytest.fixture(scope='module')
 def create_additional_data(create_surface_points, create_orientations, create_grid, create_faults,
                            create_surfaces, create_rescaling):
-
-    ad = gp.AdditionalData(create_surface_points, create_orientations, create_grid, create_faults,
-                           create_surfaces, create_rescaling)
+    ad = gempy_lite.core.model_data.AdditionalData(create_surface_points, create_orientations, create_grid,
+                                                   create_faults,
+                                                   create_surfaces, create_rescaling)
     return ad
 
 
@@ -258,20 +263,23 @@ class TestDataManipulation:
         return create_additional_data
 
 
-def test_stack():
-    stack = gempy_lite.core.data_modules.stack.Stack()
+def test_stack(save=True):
+    stack = gempy_lite.core.kernel_data.stack.Stack()
     stack.set_series_index(['foo', 'foo2', 'foo5', 'foo7'])
     stack.add_series('foo3')
     stack.delete_series('foo2')
     stack.rename_series({'foo': 'boo'})
     stack.reorder_series(['foo3', 'boo', 'foo7', 'foo5'])
     stack.set_is_fault(['boo'])
-
     faults = stack
     faults.set_is_fault(['boo'])
+    stack.set_is_finite_fault(['boo'])
+    stack.set_bottom_relation(['foo7', 'foo5'], ['Onlap', 'Fault'])
 
     fr = np.zeros((4, 4))
     fr[2, 2] = True
     faults.set_fault_relation(fr)
 
     stack.add_series('foo20')
+    print(stack.df)
+    assert stack.df.iloc[1, 4] == True
