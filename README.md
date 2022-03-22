@@ -1,4 +1,4 @@
-# <p align="left"><img src="docs/logos/gempy1.png" width="300"></p>
+# <p align="left"><img src="https://raw.githubusercontent.com/cgre-aachen/gempy/master/docs/readme_images/header_combined_slim.png" width="300"></p>
 
 
 [![PyPI](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/)
@@ -10,7 +10,7 @@
 [![DOI](https://zenodo.org/badge/96211155.svg)](https://zenodo.org/badge/latestdoi/96211155)
 [![DOCKER](https://img.shields.io/docker/cloud/automated/leguark/gempy.svg)](https://cloud.docker.com/repository/docker/leguark/gempy)
 
-<p align="center"><img src="docs/source/images/model_examples.png" width="800"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/cgre-aachen/gempy/master/docs/source/images/model_examples.png" width="800"></p>
 
 ## Overview
 
