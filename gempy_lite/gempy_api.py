@@ -15,8 +15,8 @@ from numpy import ndarray
 from typing import Union
 import warnings
 from gempy_lite.core.model import Project
-from gempy_lite.core.solution import Solution
-from gempy_lite.utils.meta import _setdoc, _setdoc_pro
+from gempy_lite.core.predictor.solution import Solution
+from gempy_lite.utils.meta import _setdoc_pro
 
 
 # region get
@@ -158,8 +158,8 @@ def init_data(geo_model: Project, extent: Union[list, ndarray] = None,
     """Initialize some of the main functions such as:
 
      - Regular grid (:class:`gempy_lite.core.data.Grid`).
-     - read_csv: :class:`gempy_lite.core.data_modules.geometric_data.SurfacePoints`
-       and :class:`gempy_lite.core.data_modules.geometric_data.Orientations` From csv files
+     - read_csv: :class:`gempy_lite.core.kernel_data.geometric_data.SurfacePoints`
+       and :class:`gempy_lite.core.kernel_data.geometric_data.Orientations` From csv files
      - set_values to default
 
     Args:

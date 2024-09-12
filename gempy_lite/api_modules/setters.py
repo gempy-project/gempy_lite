@@ -163,7 +163,7 @@ def set_orientation_from_surface_points(geo_model, indices_array):
     if np.ndim(indices_array) == 1:
         indices = indices_array
         form = geo_model._surface_points.df['surface'].loc[indices].unique()
-        assert form.shape[0] is 1, 'The interface points must belong to the same surface'
+        assert form.shape[0] == 1, 'The interface points must belong to the same surface'
         form = form[0]
 
         ori_parameters = geo_model._orientations.create_orientation_from_surface_points(

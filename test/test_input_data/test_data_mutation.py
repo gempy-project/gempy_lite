@@ -33,7 +33,7 @@ def test_rename_surface():
     mm = gp.ImplicitCoKriging()
     mm.add_surfaces(['surface1', 'foo1', 'foo2', 'foo3'])
     mm.rename_surfaces({'foo1': 'changed'})
-    assert mm._surfaces.df.loc[1, 'surface'] == 'changed'
+    assert mm._surfaces.df.loc[1, 'Surface'] == 'changed'
 
 
 def test_modify_order_surfaces():

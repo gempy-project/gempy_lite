@@ -94,13 +94,13 @@ def surface_points_from_surface_points_block(block_bool, block_grid, formation='
 
     # Init dataframe
     p = pn.DataFrame(columns=['X', 'Y', 'Z', 'formation', 'series', 'formation_number',
-                              'order_series', 'isFault'])
+                              'OrderFeature', 'isFault'])
 
     p[['X', 'Y', 'Z']] = pn.DataFrame(coord_select[loc_points])
     p['formation'] = formation
     p['series'] = series
     p['formation_number'] = formation_number
-    p['order_series'] = order_series
+    p['OrderFeature'] = order_series
 
     return p
 

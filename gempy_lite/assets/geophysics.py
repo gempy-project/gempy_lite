@@ -16,9 +16,7 @@
 """
 
 import numpy as np
-import theano
-import theano.tensor as T
-from gempy_lite.core.grid_modules.grid_types import CenteredGrid
+from gempy_lite.core.predictor.grid_modules.grid_types import CenteredGrid
 
 
 class GravityPreprocessing(CenteredGrid):

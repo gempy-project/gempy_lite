@@ -1,0 +1,6 @@
+,OrderFeature,BottomRelation,Level,isActive,isFault,isFinite,isComputed
+foo3,1,,0,False,False,False,False
+boo,2,,0,False,True,False,False
+foo7,3,,0,False,False,False,False
+foo5,4,,0,False,False,False,False
+foo20,5,,0,False,False,False,False

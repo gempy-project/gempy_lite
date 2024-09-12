@@ -121,7 +121,7 @@ def load_model(name=None, path=None, recompile=False):
     # do series properly - this needs proper check
 
     # Load series
-    s = pn.read_csv(f'{path}/{name}_series.csv', index_col=0, dtype={'order_series': 'int32',
+    s = pn.read_csv(f'{path}/{name}_series.csv', index_col=0, dtype={'OrderFeature': 'int32',
                                                                      'BottomRelation': 'category'})
 
     f = pn.read_csv(f'{path}/{name}_faults.csv', index_col=0,
@@ -174,7 +174,7 @@ def load_model(name=None, path=None, recompile=False):
                                                     'X_r': 'float64', 'Y_r': 'float64', 'Z_r': 'float64',
                                                     'dip': 'float64', 'azimuth': 'float64', 'polarity': 'float64',
                                                     'surface': 'category', 'series': 'category',
-                                                    'id': 'int64', 'order_series': 'int64'})
+                                                    'id': 'int64', 'OrderFeature': 'int64'})
     geo_model._orientations.df['surface'].cat.set_categories(cat_surfaces, inplace=True)
     geo_model._orientations.df['series'].cat.set_categories(cat_series, inplace=True)
 
@@ -183,7 +183,7 @@ def load_model(name=None, path=None, recompile=False):
                                                dtype={'X': 'float64', 'Y': 'float64', 'Z': 'float64',
                                                       'X_r': 'float64', 'Y_r': 'float64', 'Z_r': 'float64',
                                                       'surface': 'category', 'series': 'category',
-                                                      'id': 'int64', 'order_series': 'int64'})
+                                                      'id': 'int64', 'OrderFeature': 'int64'})
     geo_model._surface_points.df['surface'].cat.set_categories(cat_surfaces, inplace=True)
     geo_model._surface_points.df['series'].cat.set_categories(cat_series, inplace=True)
 
@@ -247,7 +247,7 @@ def load_model(name=None, path=None, recompile=False):
 # def load_series(geo_model, path, name):
 #     # do series properly - this needs proper check
 #     geo_model._stack.df = pn.read_csv(f'{path}/{name}_series.csv', index_col=0,
-#                                       dtype={'order_series': 'int32', 'BottomRelation': 'category'})
+#                                       dtype={'OrderFeature': 'int32', 'BottomRelation': 'category'})
 #     series_index = pn.CategoricalIndex(geo_model._stack.df.index.values)
 #     # geo_model.series.df.index = pn.CategoricalIndex(series_index)
 #     geo_model._stack.df.index = series_index
@@ -289,7 +289,7 @@ def load_model(name=None, path=None, recompile=False):
 #                                                     'X_r': 'float64', 'Y_r': 'float64', 'Z_r': 'float64',
 #                                                     'dip': 'float64', 'azimuth': 'float64', 'polarity': 'float64',
 #                                                     'surface': 'category', 'series': 'category',
-#                                                     'id': 'int64', 'order_series': 'int64'})
+#                                                     'id': 'int64', 'OrderFeature': 'int64'})
 #     geo_model._orientations.df['surface'].cat.set_categories(cat_surfaces, inplace=True)
 #     geo_model._orientations.df['series'].cat.set_categories(cat_series, inplace=True)
 #
@@ -300,7 +300,7 @@ def load_model(name=None, path=None, recompile=False):
 #                                                dtype={'X': 'float64', 'Y': 'float64', 'Z': 'float64',
 #                                                       'X_r': 'float64', 'Y_r': 'float64', 'Z_r': 'float64',
 #                                                       'surface': 'category', 'series': 'category',
-#                                                       'id': 'int64', 'order_series': 'int64'})
+#                                                       'id': 'int64', 'OrderFeature': 'int64'})
 #     geo_model._surface_points.df['surface'].cat.set_categories(cat_surfaces, inplace=True)
 #     geo_model._surface_points.df['series'].cat.set_categories(cat_series, inplace=True)
 #

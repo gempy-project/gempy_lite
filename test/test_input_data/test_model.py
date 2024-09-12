@@ -120,6 +120,6 @@ def test_define_sequential_pile(map_sequential_pile):
 
 def test_kriging_mutation(map_sequential_pile):
     geo_model = map_sequential_pile
-
-    geo_model.modify_kriging_parameters('range', 1)
-    geo_model.modify_kriging_parameters('drift equations', [0, 3])
+    geo_model.modify_kriging_parameters('Range', 1)
+    geo_model.modify_kriging_parameters('DriftDegree', [0, 1])
+    print(geo_model.kriging)
